@@ -33,6 +33,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     // Postgresql
     runtimeOnly 'org.postgresql:postgresql'
+    // OAuth
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'
