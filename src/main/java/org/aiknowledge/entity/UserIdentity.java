@@ -22,14 +22,15 @@ public class UserIdentity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, unique = true)
     private UUID userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AuthProvider provider;
+    @Builder.Default
+    private AuthProvider provider = AuthProvider.GOOGLE;
 
-    @Column(name = "provider_user_id", nullable = false)
+    @Column(name = "provider_user_id", nullable = false, unique = true)
     private String providerUserId;
 
     @CreatedDate
