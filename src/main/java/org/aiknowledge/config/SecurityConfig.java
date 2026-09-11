@@ -29,10 +29,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth.requestMatchers(SecurityConstants.PUBLIC_ENDPOINTS)
                         .permitAll().anyRequest().authenticated())
-                .oauth2Login(oauth -> oauth.userInfoEndpoint(userInfo ->
-                                userInfo.oidcUserService(googleOidcUserService))
-                        .successHandler(successHandler)
-                        .failureHandler(failureHandler)
+                .oauth2Login(oauth ->
+                        oauth.authorizationEndpoint(endpointConfig ->
+                                        endpointConfig.baseUri("/api/v1/auth"))
+                                .userInfoEndpoint(userInfo -> userInfo.oidcUserService(googleOidcUserService))
+                                .successHandler(successHandler)
+                                .failureHandler(failureHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(Customizer.withDefaults())
