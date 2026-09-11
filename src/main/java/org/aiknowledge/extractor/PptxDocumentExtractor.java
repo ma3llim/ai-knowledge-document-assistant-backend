@@ -1,6 +1,7 @@
 package org.aiknowledge.extractor;
 
 import org.aiknowledge.enums.DocumentType;
+import org.aiknowledge.processing.model.ExtractedContent;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;

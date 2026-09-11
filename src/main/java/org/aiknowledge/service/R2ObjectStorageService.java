@@ -7,12 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -59,5 +57,14 @@ public class R2ObjectStorageService implements ObjectStorageService {
 
         r2Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
         log.info("Document uploaded to R2 successfully, objectKey={}", objectKey);
+    }
+
+    @Override
+    public InputStream download(String objectKey) {
+        return r2Client.getObject(GetObjectRequest.builder()
+                .bucket(r2Properties.getBucket())
+                .key(objectKey)
+                .build()
+        );
     }
 }

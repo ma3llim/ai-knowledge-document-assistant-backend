@@ -1,6 +1,7 @@
 package org.aiknowledge.extractor;
 
 import org.aiknowledge.enums.DocumentType;
+import org.aiknowledge.processing.model.ExtractedContent;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Component;
 

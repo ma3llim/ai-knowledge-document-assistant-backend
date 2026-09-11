@@ -1,6 +1,7 @@
 package org.aiknowledge.extractor;
 
 import org.aiknowledge.enums.DocumentType;
+import org.aiknowledge.processing.model.ExtractedContent;
 
 import java.io.InputStream;
 import java.util.List;

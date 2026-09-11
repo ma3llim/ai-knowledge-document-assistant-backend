@@ -1,4 +1,4 @@
-package org.aiknowledge.extractor;
+package org.aiknowledge.processing.model;
 
 import lombok.Builder;
 import lombok.Getter;

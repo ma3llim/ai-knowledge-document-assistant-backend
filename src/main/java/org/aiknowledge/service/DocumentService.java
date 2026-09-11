@@ -9,10 +9,12 @@ import org.aiknowledge.dto.response.documents.DocumentSummaryResponse;
 import org.aiknowledge.entity.Document;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.enums.DocumentType;
+import org.aiknowledge.event.DocumentUploadedEvent;
 import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,8 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final ObjectStorageService objectStorageService;
     private final DocumentFileValidator documentFileValidator;
+    private final DocumentProcessingAsyncService documentProcessingAsyncService;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -64,6 +68,8 @@ public class DocumentService {
 
             document = documentRepository.save(document);
 
+            applicationEventPublisher.publishEvent(new DocumentUploadedEvent(document.getId()));
+            
             log.info("Document uploaded successfully, documentId={}, userId={}", documentId, userId);
 
             return objectMapper.convertValue(document, DocumentResponse.class);
