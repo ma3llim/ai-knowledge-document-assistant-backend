@@ -42,6 +42,10 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     // AWS SDK
     compileOnly 'software.amazon.awssdk:aws-sdk-java:2.54.13'
+    // extraction
+    implementation 'org.apache.pdfbox:pdfbox:3.0.5' // PDF
+    implementation 'org.apache.poi:poi-ooxml:5.4.1' // DOCX
+
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'

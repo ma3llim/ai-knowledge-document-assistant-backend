@@ -9,7 +9,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "document_chunks")
+@Table(
+        name = "document_chunks",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_document_chunk_index",
+                        columnNames = {"document_id", "chunk_index"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_document_chunks_document_id", columnList = "document_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor

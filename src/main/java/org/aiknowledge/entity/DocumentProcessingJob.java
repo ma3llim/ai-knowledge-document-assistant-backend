@@ -31,7 +31,8 @@ public class DocumentProcessingJob {
     private ProcessingStatus status;
 
     @Column(name = "attempt_count", nullable = false)
-    private Integer attemptCount;
+    @Builder.Default
+    private Integer attemptCount = 0;
 
     @Column(name = "error_code")
     private String errorCode;
