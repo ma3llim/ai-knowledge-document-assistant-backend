@@ -1,6 +1,7 @@
 package org.aiknowledge.service;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final CookieProperties cookieProperties;
+    private final ObjectMapper objectMapper;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional
@@ -72,8 +74,7 @@ public class AuthenticationService {
         String codeHash = hash(rawCode);
 
         OAuthLoginCode loginCode = oauthLoginCodeRepository.findByCodeHash(codeHash).orElseThrow(() ->
-                new UnauthorizedException("Invalid OAuth code")
-        );
+                new UnauthorizedException("Invalid OAuth code"));
 
         if (loginCode.isUsed()) {
             throw new UnauthorizedException("OAuth code has already been used");
@@ -105,15 +106,9 @@ public class AuthenticationService {
 
         addRefreshTokenCookie(response, refreshToken);
 
-        UserResponseDto userResponse = UserResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .name(user.getEmail())
-                .profileImageUrl(user.getProfileImageUrl())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt()).build();
+        UserResponseDto userResponseDto = objectMapper.convertValue(user, UserResponseDto.class);
 
-        return new UserAndTokenResponseDto(accessToken, userResponse);
+        return new UserAndTokenResponseDto(accessToken, userResponseDto);
     }
 
     @Transactional
@@ -180,13 +175,7 @@ public class AuthenticationService {
 
         addRefreshTokenCookie(response, newRefreshToken);
 
-        UserResponseDto userResponse = UserResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .name(user.getEmail())
-                .profileImageUrl(user.getProfileImageUrl())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt()).build();
+        UserResponseDto userResponse = objectMapper.convertValue(user, UserResponseDto.class);
 
         return new UserAndTokenResponseDto(newAccessToken, userResponse);
     }

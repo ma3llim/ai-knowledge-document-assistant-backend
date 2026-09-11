@@ -12,7 +12,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "documents")
+@Table(
+        name = "documents",
+        indexes = {
+                @Index(name = "idx_documents_user_id", columnList = "user_id"),
+                @Index(name = "idx_documents_status", columnList = "status")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,9 +26,7 @@ import java.util.UUID;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Document {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)

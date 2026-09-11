@@ -31,7 +31,7 @@ public class SecurityConfig {
                         .permitAll().anyRequest().authenticated())
                 .oauth2Login(oauth ->
                         oauth.authorizationEndpoint(endpointConfig ->
-                                        endpointConfig.baseUri("/api/v1/auth"))
+                                        endpointConfig.baseUri("/api/v1/auth/oauth2/authorization"))
                                 .userInfoEndpoint(userInfo -> userInfo.oidcUserService(googleOidcUserService))
                                 .successHandler(successHandler)
                                 .failureHandler(failureHandler)

@@ -4,5 +4,6 @@ public enum DocumentStatus {
     UPLOADED,
     PROCESSING,
     READY,
-    FAILED
+    FAILED,
+    DELETING
 }

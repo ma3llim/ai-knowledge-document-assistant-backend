@@ -34,7 +34,7 @@ public class JwtService {
                 .subject(userId.toString())
                 .issuer(jwtProperties.getIssuer())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(expirationMillis)))
+                .expiration(Date.from(now.plusSeconds(expirationMillis)))
                 .claim("type", tokenType.name())
                 .signWith(secretKey(), Jwts.SIG.HS512)
                 .compact();

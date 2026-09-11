@@ -10,19 +10,18 @@ import org.aiknowledge.dto.FieldErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import javax.naming.AuthenticationException;
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestControllerAdvice
@@ -228,13 +227,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
-    @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<ApiErrorResponse> handleUnexpectedException(HandlerMethodValidationException exception, HttpServletRequest request) {
-        log.error("Unhandled exception: method={}, path={}", request.getMethod(), request.getRequestURI(), exception);
+    @ExceptionHandler(InvalidDocumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidDocument(InvalidDocumentException exception, HttpServletRequest request) {
+        log.warn("Invalid document: method={}, path={}", request.getMethod(), request.getRequestURI(), exception);
+
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .success(false)
-                .message("Validation failed")
-                .errorCode("VALIDATION_ERROR")
+                .message(exception.getMessage())
+                .errorCode("INVALID_DOCUMENT")
                 .path(request.getRequestURI())
                 .build();
 

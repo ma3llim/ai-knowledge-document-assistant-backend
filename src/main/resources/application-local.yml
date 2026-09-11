@@ -1,4 +1,9 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   datasource:
     url: ${PG_URL}
     username: ${PG_USER}
@@ -40,3 +45,9 @@ app:
     http-only: true
     same-site: ${COOKIE_SAME_SITE}
     path: /
+
+  r2:
+    endpoint: ${R2_ENDPOINT}
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    bucket: ${R2_BUCKET}

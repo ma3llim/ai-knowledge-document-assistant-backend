@@ -41,11 +41,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtService.extractClaims(token);
 
-            if (!jwtService.validateAccessToken(token)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
             if (!jwtService.isAccessToken(claims)) {
                 filterChain.doFilter(request, response);
                 return;
