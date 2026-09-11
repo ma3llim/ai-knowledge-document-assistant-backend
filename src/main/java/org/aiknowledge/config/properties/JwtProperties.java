@@ -22,4 +22,5 @@ public class JwtProperties {
     private long accessTokenExpiration;
     @Min(300)
     private long refreshTokenExpiration;
+    private long oAuthLoginCodeExpiration;
 }

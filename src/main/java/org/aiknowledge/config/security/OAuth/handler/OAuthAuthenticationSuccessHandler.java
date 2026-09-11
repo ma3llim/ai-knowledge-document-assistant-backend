@@ -4,41 +4,35 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.aiknowledge.config.properties.JwtProperties;
-import org.aiknowledge.config.security.JwtService;
-import org.aiknowledge.entity.User;
-import org.aiknowledge.enums.TokenType;
-import org.aiknowledge.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.config.security.OAuth.CustomOidcUser;
+import org.aiknowledge.constant.OAuthConstants;
+import org.aiknowledge.service.AuthenticationService;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OAuthAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
-    private final UserRepository userRepository;
-    private final JwtService jwtService;
-    private final JwtProperties jwtProperties;
+    private final AuthenticationService authenticationService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+        CustomOidcUser oidcUser = (CustomOidcUser) authentication.getPrincipal();
+        UUID userId = oidcUser.getUserId();
 
-        String email = oidcUser.getEmail();
-        User user = userRepository.findByEmail(email).orElseThrow();
-        String accessToken = jwtService.generateToken(user.getId(), jwtProperties.getAccessTokenExpiration(), TokenType.ACCESS);
-        String refreshToken = jwtService.generateToken(user.getId(), jwtProperties.getRefreshTokenExpiration(), TokenType.REFRESH);
+        String oneTimeCode = authenticationService.createOAuthLoginCode(userId);
 
-        // TODO: Temporary approach for development.
-        // Production frontend integration should use a secure
-        // token transport strategy.
-        response.sendRedirect(
-                "http://localhost:5173/oauth/callback"
-                        + "?accessToken=" + accessToken
-                        + "&refreshToken=" + refreshToken
-        );
+        String redirectUrl = UriComponentsBuilder.fromUriString(OAuthConstants.FRONTEND_OAUTH_CALLBACK_URL).queryParam(
+                "code", oneTimeCode).build().toUriString();
+
+        log.info("OAuth login successful, redirecting userId={}", userId);
+        response.sendRedirect(redirectUrl);
     }
 }

@@ -8,6 +8,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.config.properties.JwtProperties;
+import org.aiknowledge.entity.User;
 import org.aiknowledge.enums.TokenType;
 import org.springframework.stereotype.Service;
 
@@ -25,23 +26,31 @@ public class JwtService {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecret()));
     }
 
-    public String generateToken(UUID userId, long expirationMillis, TokenType tokenType) {
+    public String generateToken(UUID userId, long expirationMillis, TokenType tokenType, UUID tokenId) {
         Instant now = Instant.now();
 
         return Jwts.builder()
-                .id(UUID.randomUUID().toString())
+                .id(tokenId.toString())
                 .subject(userId.toString())
                 .issuer(jwtProperties.getIssuer())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMillis)))
-                .claim("type", tokenType)
+                .claim("type", tokenType.name())
                 .signWith(secretKey(), Jwts.SIG.HS512)
                 .compact();
     }
 
+    public String generateAccessToken(User user) {
+        return generateToken(user.getId(), jwtProperties.getAccessTokenExpiration(), TokenType.ACCESS, UUID.randomUUID());
+    }
+
+    public String generateRefreshToken(User user, String tokenId) {
+        return generateToken(user.getId(), jwtProperties.getRefreshTokenExpiration(), TokenType.REFRESH, UUID.fromString(tokenId));
+    }
+
     // parse + verify JWT
     public Jws<Claims> parse(String token) {
-        return Jwts.parser().verifyWith(secretKey()).build().parseSignedClaims(token);
+        return Jwts.parser().verifyWith(secretKey()).requireIssuer(jwtProperties.getIssuer()).build().parseSignedClaims(token);
     }
 
     // extract claims

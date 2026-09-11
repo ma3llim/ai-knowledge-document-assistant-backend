@@ -3,6 +3,7 @@ spring:
     url: ${PG_URL}
     username: ${PG_USER}
     password: ${PG_PASSWORD}
+
   security:
     oauth2:
       client:
@@ -17,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
 
 app:
   cors:
@@ -26,10 +27,11 @@ app:
       - http://127.0.0.1:5500
 
   jwt:
-    secret: ${JWT_SECRET}
     issuer: ${JWT_ISSUER}
+    secret: ${JWT_SECRET}
     access-token-expiration: ${JWT_ACCESS_EXPIRATION}
     refresh-token-expiration: ${JWT_REFRESH_EXPIRATION}
+    oauth-login-code-expiration: ${JWT_OAUTH_LOGIN_CODE_EXPIRATION}
 
   cookie:
     access-token-name: access_token
@@ -38,7 +40,3 @@ app:
     http-only: true
     same-site: ${COOKIE_SAME_SITE}
     path: /
-
-logging:
-  level:
-    org.springframework.security: DEBUG

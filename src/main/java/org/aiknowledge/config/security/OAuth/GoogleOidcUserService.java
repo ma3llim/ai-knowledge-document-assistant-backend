@@ -5,20 +5,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.entity.UserIdentity;
 import org.aiknowledge.enums.AuthProvider;
+import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.repository.UserIdentityRepository;
 import org.aiknowledge.repository.UserRepository;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CustomOAuthUserService extends OidcUserService {
+public class GoogleOidcUserService extends OidcUserService {
     private final UserRepository userRepository;
     private final UserIdentityRepository userIdentityRepository;
 
@@ -35,34 +38,38 @@ public class CustomOAuthUserService extends OidcUserService {
         AuthProvider authProvider = AuthProvider.valueOf(provider.toUpperCase());
 
         UserIdentity userIdentity = userIdentityRepository.findByProviderAndProviderUserId(authProvider, providerUserId).orElse(null);
+        User user;
+
         if (userIdentity != null) {
-            return new CustomOidcUser(
-                    oidcUser.getAuthorities(),
-                    (DefaultOidcUser) oidcUser,
-                    userIdentity.getUserId()
-            );
-        }
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            user = User.builder().email(email)
-                    .name(name)
-                    .profileImageUrl(profileImageUrl)
+            user = userRepository.findById(userIdentity.getUserId()).orElseThrow(() ->
+                    new ResourceNotFoundException("User associated with Google identity was not found"));
+        } else {
+            user = userRepository.findByEmail(email).orElse(null);
+
+            if (user == null) {
+                user = User.builder().email(email)
+                        .name(name)
+                        .profileImageUrl(profileImageUrl)
+                        .build();
+
+                user = userRepository.save(user);
+            }
+
+            UserIdentity newIdentity = UserIdentity.builder()
+                    .userId(user.getId()).
+                    provider(authProvider)
+                    .providerUserId(providerUserId)
                     .build();
 
-            user = userRepository.save(user);
+            userIdentityRepository.save(newIdentity);
         }
 
-        UserIdentity newIdentity = UserIdentity.builder()
-                .userId(user.getId()).
-                provider(authProvider)
-                .providerUserId(providerUserId)
-                .build();
-
-        userIdentityRepository.save(newIdentity);
+        log.info("Google authentication successful, userId={}", user.getId());
+        Collection<? extends GrantedAuthority> authorities = oidcUser.getAuthorities();
 
         return new CustomOidcUser(
-                oidcUser.getAuthorities(),
-                (DefaultOidcUser) oidcUser,
+                authorities,
+                oidcUser,
                 user.getId()
         );
     }
