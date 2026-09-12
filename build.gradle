@@ -59,7 +59,8 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-markdown-document-reader'
     implementation 'org.apache.poi:poi-ooxml:5.4.1'
     implementation 'org.apache.commons:commons-csv:1.14.1'
-
+    // Pg Vector
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'

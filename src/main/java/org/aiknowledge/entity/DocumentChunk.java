@@ -56,6 +56,9 @@ public class DocumentChunk {
     @Column(name = "slide_number")
     private Integer slideNumber;
 
+    @Column(name = "embedding", columnDefinition = "vector(1024)")
+    private float[] embedding;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

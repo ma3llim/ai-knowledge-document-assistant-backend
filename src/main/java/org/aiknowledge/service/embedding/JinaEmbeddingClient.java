@@ -26,7 +26,7 @@ public class JinaEmbeddingClient {
     }
 
     public JinaEmbeddingResponse embed(List<String> texts) {
-        JinaEmbeddingRequest request = new JinaEmbeddingRequest(jinaEmbeddingProperties.getModel(), "retrieval.passage", texts);
+        JinaEmbeddingRequest request = new JinaEmbeddingRequest(jinaEmbeddingProperties.getModel(), "retrieval.passage", texts, 1024);
 
         return restClient.post()
                 .uri("/v1/embeddings")
