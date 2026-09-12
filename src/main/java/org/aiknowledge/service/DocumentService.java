@@ -7,11 +7,14 @@ import org.aiknowledge.dto.PageResponse;
 import org.aiknowledge.dto.response.documents.DocumentResponse;
 import org.aiknowledge.dto.response.documents.DocumentSummaryResponse;
 import org.aiknowledge.entity.Document;
+import org.aiknowledge.entity.DocumentProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.enums.DocumentType;
+import org.aiknowledge.enums.ProcessingStatus;
 import org.aiknowledge.event.DocumentUploadedEvent;
 import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
+import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;
 import org.springframework.context.ApplicationEventPublisher;
@@ -32,7 +35,7 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final ObjectStorageService objectStorageService;
     private final DocumentFileValidator documentFileValidator;
-    private final DocumentProcessingAsyncService documentProcessingAsyncService;
+    private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
 
@@ -68,8 +71,16 @@ public class DocumentService {
 
             document = documentRepository.save(document);
 
-            applicationEventPublisher.publishEvent(new DocumentUploadedEvent(document.getId()));
-            
+            DocumentProcessingJob job = DocumentProcessingJob.builder()
+                    .documentId(document.getId())
+                    .status(ProcessingStatus.PENDING)
+                    .attemptCount(0)
+                    .build();
+
+            documentProcessingJobRepository.save(job);
+
+            applicationEventPublisher.publishEvent(new DocumentUploadedEvent(job.getId()));
+
             log.info("Document uploaded successfully, documentId={}, userId={}", documentId, userId);
 
             return objectMapper.convertValue(document, DocumentResponse.class);
@@ -146,5 +157,33 @@ public class DocumentService {
 
     private String buildObjectKey(UUID userId, UUID documentId, String filename) {
         return "users/" + userId + "/documents/" + documentId + "/" + filename;
+    }
+
+    public void retryProcessing(UUID userId, UUID documentId) {
+        Document document = documentRepository.findById(documentId).orElseThrow(() ->
+                new IllegalArgumentException("Document not found: " + documentId));
+
+        DocumentProcessingJob job = documentProcessingJobRepository.findTopByDocumentIdOrderByCreatedAtDesc(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Processing job not found: " + documentId));
+
+        if (job.getStatus() != ProcessingStatus.FAILED) {
+            throw new IllegalStateException("Only failed document processing jobs can be retried");
+        }
+
+        job.setStatus(ProcessingStatus.PENDING);
+        job.setStartedAt(null);
+        job.setCompletedAt(null);
+        job.setErrorCode(null);
+        job.setErrorMessage(null);
+
+        documentProcessingJobRepository.save(job);
+
+        document.setStatus(DocumentStatus.PROCESSING);
+        document.setFailureReason(null);
+        document.setProcessedAt(null);
+
+        documentRepository.save(document);
+
+        applicationEventPublisher.publishEvent(new DocumentUploadedEvent(job.getId()));
     }
 }

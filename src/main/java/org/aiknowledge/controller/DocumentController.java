@@ -53,4 +53,12 @@ public class DocumentController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{documentId}/retry")
+    public ResponseEntity<Void> retryProcessing(@PathVariable UUID documentId) {
+        UUID userId = securityUserService.getCurrentUserId();
+        documentService.retryProcessing(userId, documentId);
+
+        return ResponseEntity.noContent().build();
+    }
 }
