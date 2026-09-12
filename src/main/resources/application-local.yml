@@ -25,6 +25,13 @@ spring:
     hibernate:
       ddl-auto: update
 
+  ai:
+    google:
+      genai:
+        embedding:
+          options:
+            model: gemini-embedding-001
+
 app:
   cors:
     allowed-origins:
@@ -51,3 +58,7 @@ app:
     access-key: ${R2_ACCESS_KEY}
     secret-key: ${R2_SECRET_KEY}
     bucket: ${R2_BUCKET}
+
+  processing:
+    chunk-size: 1000
+    chunk-overlap: 200
