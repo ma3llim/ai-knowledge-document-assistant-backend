@@ -13,6 +13,6 @@ public class DocumentUploadedEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleDocumentUploaded(DocumentUploadedEvent event) {
-        documentProcessingAsyncService.processAsync(event.documentId());
+        documentProcessingAsyncService.processAsync(event.jobId());
     }
 }

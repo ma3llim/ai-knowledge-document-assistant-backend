@@ -9,6 +9,4 @@ import java.util.UUID;
 
 public interface UserIdentityRepository extends JpaRepository<UserIdentity, UUID> {
     Optional<UserIdentity> findByProviderAndProviderUserId(AuthProvider provider, String providerUserId);
-
-    Optional<UserIdentity> findByUserId(UUID userId);
 }

@@ -23,12 +23,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
   ai:
     vectorstore:
       pgvector:
-        initialize-schema: true
+        initialize-schema: false
         dimensions: 1024
 
     google:
