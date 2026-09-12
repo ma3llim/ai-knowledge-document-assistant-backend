@@ -15,6 +15,15 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    set('springAiVersion', "2.0.1")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
 dependencies {
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -43,10 +52,13 @@ dependencies {
     // AWS SDK
     implementation 'software.amazon.awssdk:aws-sdk-java:2.54.13'
     // Spring AI
-    implementation platform("org.springframework.ai:spring-ai-bom:2.0.0")
-    implementation 'org.springframework.ai:spring-ai-openai'
-    // Google Genai
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    // Spring AI PDF Reader
+    implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
+    implementation 'org.springframework.ai:spring-ai-tika-document-reader'
+    implementation 'org.springframework.ai:spring-ai-markdown-document-reader'
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
+    implementation 'org.apache.commons:commons-csv:1.14.1'
 
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'

@@ -3,6 +3,8 @@ package org.aiknowledge.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.config.properties.R2Properties;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -67,4 +69,11 @@ public class R2ObjectStorageService implements ObjectStorageService {
                 .build()
         );
     }
+
+    @Override
+    public Resource loadFromR2(String objectKey) {
+        InputStream inputStream = download(objectKey);
+        return new InputStreamResource(inputStream);
+    }
+
 }

@@ -1,5 +1,6 @@
 package org.aiknowledge.service;
 
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -13,4 +14,6 @@ public interface ObjectStorageService {
     void delete(String objectKey);
 
     boolean exists(String objectKey);
+
+    Resource loadFromR2(String objectKey);
 }
