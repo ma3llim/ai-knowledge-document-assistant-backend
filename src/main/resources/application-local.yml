@@ -28,6 +28,10 @@ spring:
   ai:
     google:
       genai:
+        api-key: ${GOOGLE_API_KEY}
+        chat:
+          options:
+            model: gemini-2.5-flash
         embedding:
           options:
             model: gemini-embedding-001
