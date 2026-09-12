@@ -23,6 +23,7 @@ public class DocumentProcessingAsyncService {
     private final DocumentReaderFactory documentReaderFactory;
     private final TokenTextSplitter tokenTextSplitter;
     private final DocumentContentNormalizer documentContentNormalizer;
+    private final EmbeddingService embeddingService;
 
     @Async("documentProcessingExecutor")
     public void processAsync(UUID documentId) {
@@ -38,5 +39,11 @@ public class DocumentProcessingAsyncService {
 
         List<org.springframework.ai.document.Document> chunks = tokenTextSplitter.apply(documents);
 
+        List<float[]> embeddings = embeddingService.embed(chunks);
+
+        for (int i = 0; i < embeddings.size(); i++) {
+            float[] embedding = embeddings.get(i);
+            log.info("Embedding {} | dimensions={}", i, embedding.length);
+        }
     }
 }

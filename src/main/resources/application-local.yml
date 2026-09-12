@@ -32,9 +32,6 @@ spring:
         chat:
           options:
             model: gemini-2.5-flash
-        embedding:
-          options:
-            model: gemini-embedding-001
 
 app:
   cors:
@@ -66,3 +63,9 @@ app:
   processing:
     chunk-size: 1000
     chunk-overlap: 200
+
+  embedding:
+    jina:
+      api-key: ${JINA_API_KEY}
+      base-url: https://api.jina.ai
+      model: jina-embeddings-v4
