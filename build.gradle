@@ -61,6 +61,8 @@ dependencies {
     implementation 'org.apache.commons:commons-csv:1.14.1'
     // Pg Vector
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    // retry
+    implementation 'org.springframework.retry:spring-retry'
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
