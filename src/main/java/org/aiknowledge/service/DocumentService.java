@@ -14,6 +14,7 @@ import org.aiknowledge.enums.ProcessingStatus;
 import org.aiknowledge.event.DocumentUploadedEvent;
 import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
+import org.aiknowledge.integration.storage.ObjectStorageService;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;

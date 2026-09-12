@@ -1,10 +1,11 @@
 package org.aiknowledge.config;
 
 import lombok.RequiredArgsConstructor;
-import org.aiknowledge.config.security.OAuth.GoogleOidcUserService;
-import org.aiknowledge.config.security.OAuth.JwtAuthenticationFilter;
-import org.aiknowledge.config.security.OAuth.handler.OAuthAuthenticationFailureHandler;
-import org.aiknowledge.config.security.OAuth.handler.OAuthAuthenticationSuccessHandler;
+import org.aiknowledge.constant.SecurityConstants;
+import org.aiknowledge.security.GoogleOidcUserService;
+import org.aiknowledge.security.JwtAuthenticationFilter;
+import org.aiknowledge.security.handler.OAuthAuthenticationFailureHandler;
+import org.aiknowledge.security.handler.OAuthAuthenticationSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;

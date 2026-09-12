@@ -1,7 +1,7 @@
 package org.aiknowledge.config;
 
 import lombok.RequiredArgsConstructor;
-import org.aiknowledge.config.properties.R2Properties;
+import org.aiknowledge.properties.R2Properties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -27,5 +27,5 @@ public class R2Config {
                 .credentialsProvider(StaticCredentialsProvider.create(credentials)).build();
     }
 
-    
+
 }

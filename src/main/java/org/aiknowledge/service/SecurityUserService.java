@@ -1,7 +1,7 @@
 package org.aiknowledge.service;
 
-import org.aiknowledge.config.security.OAuth.CustomOidcUser;
 import org.aiknowledge.entity.User;
+import org.aiknowledge.security.CustomOidcUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ public class SecurityUserService {
         if (principal instanceof CustomOidcUser customOidcUser) {
             return customOidcUser.getUserId();
         }
-        
+
         throw new IllegalStateException("Authenticated user information is unavailable");
     }
 }
