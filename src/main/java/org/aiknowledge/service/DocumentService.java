@@ -15,6 +15,7 @@ import org.aiknowledge.event.DocumentUploadedEvent;
 import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.storage.ObjectStorageService;
+import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;
@@ -36,6 +37,7 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final ObjectStorageService objectStorageService;
     private final DocumentFileValidator documentFileValidator;
+    private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
@@ -134,12 +136,13 @@ public class DocumentService {
                 new ResourceNotFoundException("Document not found"));
 
         document.setStatus(DocumentStatus.DELETING);
-
         documentRepository.save(document);
 
         try {
             objectStorageService.delete(document.getR2ObjectKey());
 
+            documentChunkRepository.deleteAllByDocumentId(document.getId());
+            
             documentRepository.delete(document);
 
             log.info("Document deleted successfully, documentId={}, userId={}", documentId, userId);
@@ -186,5 +189,9 @@ public class DocumentService {
         documentRepository.save(document);
 
         applicationEventPublisher.publishEvent(new DocumentUploadedEvent(job.getId()));
+    }
+
+    public boolean validateAccess(UUID userId, UUID documentId) {
+        return documentRepository.findByIdAndUserId(documentId, userId).isPresent();
     }
 }

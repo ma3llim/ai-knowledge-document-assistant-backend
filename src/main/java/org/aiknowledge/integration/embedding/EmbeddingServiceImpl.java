@@ -21,7 +21,19 @@ public class EmbeddingServiceImpl implements EmbeddingService {
         List<float[]> embeddings = embeddingModel.embed(texts);
 
         log.info("Embeddings generated successfully. documents={}, embeddings={}", documents.size(), embeddings.size());
-
         return embeddings;
+    }
+
+    @Override
+    public float[] embedQuery(String query) {
+        List<float[]> embeddings = embeddingModel.embed(List.of(query));
+
+        if (embeddings.isEmpty()) {
+            log.warn("No embedding generated for query");
+            throw new IllegalStateException("Failed to generate query embedding");
+        }
+
+        log.debug("Query embedding generated successfully. dimension={}", embeddings.getFirst().length);
+        return embeddings.getFirst();
     }
 }

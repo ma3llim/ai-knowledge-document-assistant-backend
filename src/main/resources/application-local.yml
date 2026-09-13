@@ -74,3 +74,8 @@ app:
       api-key: ${JINA_API_KEY}
       base-url: https://api.jina.ai
       model: jina-embeddings-v4
+
+  rag:
+    retrieval:
+      similarity-threshold: 0.80
+      top-k: 5

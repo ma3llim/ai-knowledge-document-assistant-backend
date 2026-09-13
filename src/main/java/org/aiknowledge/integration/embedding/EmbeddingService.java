@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface EmbeddingService {
     List<float[]> embed(List<Document> documents);
+
+    float[] embedQuery(String query);
 }
