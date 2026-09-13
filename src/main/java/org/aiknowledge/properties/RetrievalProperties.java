@@ -10,6 +10,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.rag.retrieval")
 public class RetrievalProperties {
-    private double similarityThreshold = 0.80;
+    private double similarityThreshold = 0.70;
     private int topK = 5;
 }

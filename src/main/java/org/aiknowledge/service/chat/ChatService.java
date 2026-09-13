@@ -4,10 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
-import org.aiknowledge.integration.document.DocumentRetrievalService;
-import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.query.model.QuerySpec;
-import org.aiknowledge.integration.query.service.QueryClassifierImpl;
+import org.aiknowledge.integration.query.specifier.QuerySpecifier;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.DocumentService;
@@ -22,9 +20,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final SecurityUserService userService;
     private final DocumentService documentService;
-    private final EmbeddingService embeddingService;
-    private final DocumentRetrievalService documentRetrievalService;
-    private final QueryClassifierImpl queryClassifier;
+    private final QuerySpecifier querySpecifier;
 
     public void processQuestion(UUID documentId, String userQuery) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
@@ -38,16 +34,14 @@ public class ChatService {
         }
 
         userQuery = normalizeQuery(userQuery);
-        log.info("Processing question for documentId={}", documentId);
 
-        QuerySpec querySpec = queryClassifier.classify(userQuery);
-        log.info("Query Spec: {}", querySpec);
+        QuerySpec querySpec = querySpecifier.classify(userQuery);
+
+        log.info("User Query: {}", userQuery);
         log.info(
-                "Query specified. type={}, intent={}, strategy={}, requiresDocuments={}",
+                "Query specified. type={}, strategy={}",
                 querySpec.type(),
-                querySpec.intent(),
-                querySpec.retrievalStrategy(),
-                querySpec.requiresDocuments()
+                querySpec.retrievalStrategy()
         );
 
 
