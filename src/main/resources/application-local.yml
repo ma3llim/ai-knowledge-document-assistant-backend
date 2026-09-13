@@ -31,12 +31,14 @@ spring:
         initialize-schema: false
         dimensions: 1024
 
-    google:
-      genai:
-        api-key: ${GOOGLE_API_KEY}
-        chat:
-          options:
-            model: gemini-2.5-flash
+    model:
+      embedding: none
+      image: none
+      chat: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
 
 app:
   cors:
@@ -75,7 +77,20 @@ app:
       base-url: https://api.jina.ai
       model: jina-embeddings-v4
 
+  groq:
+    api-key: ${GROQ_API_KEY}
+    base-url: https://api.groq.com/openai
+    model: openai/gpt-oss-20b
+
   rag:
     retrieval:
-      similarity-threshold: 0.80
+      similarity-threshold: 0.70
       top-k: 5
+
+logging:
+  level:
+    org.springframework.ai: TRACE
+    org.springframework.ai.openai: TRACE
+    org.springframework.web.client: DEBUG
+    org.springframework.http.client: DEBUG
+    aorg.springframework.ai.chat.client.advisor: DEBUG

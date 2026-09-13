@@ -15,7 +15,7 @@ public class DocumentRetrievalService {
 
     public List<SimilarChunkProjection> retrieve(UUID documentId, float[] queryVector) {
         String vector = toVectorString(queryVector);
-        return documentChunkRepository.findSimilarChunks(documentId, vector, 5);
+        return documentChunkRepository.findSimilarChunks(documentId, vector);
     }
 
     private String toVectorString(float[] vector) {

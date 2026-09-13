@@ -13,25 +13,16 @@ import java.util.UUID;
 public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UUID> {
     @Query(
             value = """
-                    SELECT
-                                        id,
-                                        document_id AS documentId,
-                                        chunk_index AS chunkIndex,
-                                        content,
-                                        page_number AS pageNumber,
-                                        section_name AS sectionName,
-                                        sheet_name AS sheetName,
-                                        slide_number AS slideNumber,
-                                                            1 - (embedding <=> CAST(:queryVector AS vector)) AS similarity
-                                        FROM document_chunks
-                     WHERE document_id = :documentId
-                     ORDER BY embedding <=> CAST(:queryVector AS vector) LIMIT :limit
+                    SELECT id, document_id AS documentId, chunk_index AS chunkIndex, content, page_number AS pageNumber,
+                    section_name AS sectionName, sheet_name AS sheetName, slide_number AS slideNumber,
+                    1 - (embedding <=> CAST(:queryVector AS vector)) AS similarity
+                    FROM document_chunks WHERE document_id = :documentId AND 1 - (embedding <=> CAST(:queryVector AS vector)) >= 0.70
+                    ORDER BY embedding <=> CAST(:queryVector AS vector)
                     """,
             nativeQuery = true)
     List<SimilarChunkProjection> findSimilarChunks(
             @Param("documentId") UUID documentId,
-            @Param("queryVector") String queryVector,
-            @Param("limit") int limit);
+            @Param("queryVector") String queryVector);
 
     @Modifying
     @Query("""
