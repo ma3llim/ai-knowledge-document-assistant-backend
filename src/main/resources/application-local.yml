@@ -23,12 +23,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
   ai:
     vectorstore:
       pgvector:
-        initialize-schema: false
+        initialize-schema: true
         dimensions: 1024
 
     model:
@@ -82,9 +82,9 @@ app:
 
   ai:
     rag:
-      chunk-size: 800
-      chunk-overlap: 120
-      min-chunk-length: 100
+      chunk-size: 700
+      min-chunk-characters: 100
+      min-chunk-length-to-embed: 50
       max-chunk-size: 1000
       retrieval:
         similarity-threshold: 0.70

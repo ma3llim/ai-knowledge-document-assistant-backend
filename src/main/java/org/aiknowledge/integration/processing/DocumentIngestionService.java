@@ -2,8 +2,8 @@ package org.aiknowledge.integration.processing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.entity.Document;
-import org.aiknowledge.entity.DocumentChunk;
 import org.aiknowledge.entity.DocumentProcessingJob;
 import org.aiknowledge.entity.SummaryProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
@@ -12,11 +12,9 @@ import org.aiknowledge.enums.ProcessingStatus;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.document.DocumentContentNormalizer;
 import org.aiknowledge.integration.document.DocumentReaderFactory;
-import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.sqs.event.DocumentSummaryEvent;
 import org.aiknowledge.integration.sqs.publisher.DocumentSummaryPublisher;
 import org.aiknowledge.integration.storage.ObjectStorageService;
-import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.repository.SummaryProcessingJobRepository;
@@ -26,10 +24,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -38,14 +33,12 @@ public class DocumentIngestionService {
     private final DocumentRepository documentRepository;
     private final ObjectStorageService objectStorageService;
     private final DocumentReaderFactory documentReaderFactory;
-    private final TokenTextSplitter tokenTextSplitter;
     private final DocumentContentNormalizer documentContentNormalizer;
-    private final EmbeddingService embeddingService;
-    private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final SummaryProcessingJobRepository summaryProcessingJobRepository;
     private final DocumentSummaryPublisher documentSummaryPublisher;
     private final VectorStore vectorStore;
+    private final AppProperties properties;
 
     public void process(UUID jobId) {
         DocumentProcessingJob job = documentProcessingJobRepository.findById(jobId).orElseThrow(() ->
@@ -69,18 +62,42 @@ public class DocumentIngestionService {
 
             documents = documentContentNormalizer.normalize(documents);
 
+            TokenTextSplitter tokenTextSplitter = TokenTextSplitter.builder()
+                    .withChunkSize(properties.ai().rag().chunkSize())
+                    .withMinChunkSizeChars(properties.ai().rag().minChunkCharacters())
+                    .withMinChunkLengthToEmbed(properties.ai().rag().minChunkLengthToEmbed())
+                    .withMaxNumChunks(properties.ai().rag().maxChunkSize())
+                    .withKeepSeparator(true)
+                    .build();
+
             List<org.springframework.ai.document.Document> chunks = tokenTextSplitter.apply(documents);
 
-            List<float[]> embeddings = embeddingService.embed(chunks);
-            log.info("Document embedding completed. documentId={}, embeddings={}", job.getDocumentId(), embeddings.size());
-
-            List<DocumentChunk> documentChunks = new ArrayList<>();
-
-            for (int i = 0; i < chunks.size(); i++) {
-                DocumentChunk documentChunk = buildDocumentChunk(job.getDocumentId(), i, chunks.get(i), embeddings.get(i));
-                documentChunks.add(documentChunk);
+            if (chunks.isEmpty()) {
+                document.setStatus(DocumentStatus.FAILED);
+                document.setFailureReason("Document is empty or its content could not be extracted.");
+                return;
             }
-            documentChunkRepository.saveAll(documentChunks);
+
+            List<org.springframework.ai.document.Document> enrichedChunks = new ArrayList<>();
+
+            for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
+                org.springframework.ai.document.Document chunk = chunks.get(chunkIndex);
+
+                Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+                metadata.put("document_id", document.getId().toString());
+                metadata.put("file_name", document.getOriginalFilename());
+                metadata.put("content_type", document.getFileType());
+                metadata.put("chunk_index", chunkIndex);
+
+                addSourceMetadata(metadata, chunk);
+
+                enrichedChunks.add(new org.springframework.ai.document.Document(chunk.getText(), metadata));
+            }
+
+            vectorStore.add(enrichedChunks);
+
+            log.info("Document chunks embedded and stored successfully. documentId={}, chunks={}",
+                    document.getId(), enrichedChunks.size());
 
             document.setStatus(DocumentStatus.READY);
             document.setProcessedAt(Instant.now());
@@ -96,7 +113,7 @@ public class DocumentIngestionService {
                     .build();
 
             summaryProcessingJobRepository.save(summaryProcessingJob);
-            log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), documentChunks.size());
+            log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), enrichedChunks.size());
 
             documentSummaryPublisher.publish(new DocumentSummaryEvent(summaryProcessingJob.getId()));
         } catch (Exception exception) {
@@ -116,33 +133,18 @@ public class DocumentIngestionService {
         }
     }
 
-    private DocumentChunk buildDocumentChunk(
-            UUID documentId, int chunkIndex, org.springframework.ai.document.Document chunk, float[] embedding) {
-        Map<String, Object> metadata = chunk.getMetadata();
-        return DocumentChunk.builder()
-                .documentId(documentId)
-                .chunkIndex(chunkIndex)
-                .content(chunk.getText())
-                .tokenCount(null)
-                .pageNumber(getIntegerMetadata(metadata, "page_number"))
-                .sectionName(getStringMetadata(metadata, "section_name"))
-                .sheetName(getStringMetadata(metadata, "sheet_name"))
-                .slideNumber(getIntegerMetadata(metadata, "slide_number"))
-                .embedding(embedding)
-                .build();
+    private void addSourceMetadata(Map<String, Object> metadata, org.springframework.ai.document.Document chunk) {
+        Map<String, Object> chunkMetadata = chunk.getMetadata();
+
+        putIfPresent(metadata, "page_number", chunkMetadata.get("page_number"));
+        putIfPresent(metadata, "section_name", chunkMetadata.get("section_name"));
+        putIfPresent(metadata, "sheet_name", chunkMetadata.get("sheet_name"));
+        putIfPresent(metadata, "slide_number", chunkMetadata.get("slide_number"));
     }
 
-    private String getStringMetadata(Map<String, Object> metadata, String key) {
-        Object value = metadata.get(key);
-        return value != null ? value.toString() : null;
-    }
-
-    private Integer getIntegerMetadata(Map<String, Object> metadata, String key) {
-        Object value = metadata.get(key);
-        if (value instanceof Number number) {
-            return number.intValue();
+    private void putIfPresent(Map<String, Object> metadata, String key, Object value) {
+        if (value != null) {
+            metadata.put(key, value);
         }
-
-        return null;
     }
 }

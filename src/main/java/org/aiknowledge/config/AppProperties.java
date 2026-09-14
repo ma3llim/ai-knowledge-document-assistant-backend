@@ -81,8 +81,8 @@ public record AppProperties(
 
         public record Rag(
                 int chunkSize,
-                int chunkOverlap,
-                int minChunkLength,
+                int minChunkCharacters,
+                int minChunkLengthToEmbed,
                 int maxChunkSize,
                 Retrieval retrieval
         ) {

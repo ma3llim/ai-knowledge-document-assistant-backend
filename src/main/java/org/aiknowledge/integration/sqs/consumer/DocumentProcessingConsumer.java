@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class DocumentProcessingConsumer {
     private final DocumentIngestionService documentProcessingService;
 
-    @SqsListener("${app.sqs.document-processing-queue}")
+    @SqsListener("${app.messaging.sqs.document-processing-queue}")
     public void consume(DocumentProcessingEvent event) {
         documentProcessingService.process(event.jobId());
     }

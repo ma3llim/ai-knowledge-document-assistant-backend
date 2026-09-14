@@ -42,9 +42,6 @@ public class Document {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
-    @Column(name = "total_pages", nullable = false)
-    private Long totalPages;
-
     @Column(name = "r2_object_key", nullable = false, unique = true)
     private String r2ObjectKey;
 
