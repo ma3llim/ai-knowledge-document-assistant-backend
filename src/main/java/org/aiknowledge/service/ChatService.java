@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
-import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.query.model.QuerySpec;
 import org.aiknowledge.integration.query.specifier.QuerySpecifier;
 import org.aiknowledge.projection.SimilarChunkProjection;
@@ -24,7 +23,6 @@ public class ChatService {
     private final SecurityUserService userService;
     private final DocumentService documentService;
     private final QuerySpecifier querySpecifier;
-    private final EmbeddingService embeddingService;
 
     public void processQuestion(UUID documentId, String userQuery) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {

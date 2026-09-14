@@ -94,7 +94,7 @@ app:
       jina:
         api-key: ${JINA_API_KEY}
         base-url: https://api.jina.ai
-        model: jina-embeddings-v4
+        model: jina-embeddings-v3
 
     query-specifier:
       cloudflare:

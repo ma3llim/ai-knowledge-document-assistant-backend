@@ -90,9 +90,6 @@ public class DocumentIngestionService {
 
             vectorStore.add(enrichedChunks);
 
-            log.info("Document chunks embedded and stored successfully. documentId={}, chunks={}",
-                    document.getId(), enrichedChunks.size());
-
             document.setStatus(DocumentStatus.READY);
             document.setProcessedAt(Instant.now());
             documentRepository.save(document);
@@ -100,6 +97,8 @@ public class DocumentIngestionService {
             job.setStatus(ProcessingStatus.COMPLETED);
             job.setCompletedAt(Instant.now());
             documentProcessingJobRepository.save(job);
+            log.info("Document chunks embedded and stored successfully. documentId={}, chunks={}",
+                    document.getId(), enrichedChunks.size());
         } catch (Exception exception) {
             log.error("Document processing failed. documentId={}", job.getDocumentId(), exception);
 
