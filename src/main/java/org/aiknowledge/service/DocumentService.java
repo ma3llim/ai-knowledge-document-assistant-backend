@@ -11,9 +11,9 @@ import org.aiknowledge.entity.DocumentProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.enums.DocumentType;
 import org.aiknowledge.enums.ProcessingStatus;
-import org.aiknowledge.event.DocumentUploadedEvent;
 import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
+import org.aiknowledge.integration.sqs.event.DocumentProcessingEvent;
 import org.aiknowledge.integration.storage.ObjectStorageService;
 import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
@@ -39,8 +39,8 @@ public class DocumentService {
     private final DocumentFileValidator documentFileValidator;
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public DocumentResponse upload(UUID userId, MultipartFile file) {
@@ -82,7 +82,7 @@ public class DocumentService {
 
             documentProcessingJobRepository.save(job);
 
-            applicationEventPublisher.publishEvent(new DocumentUploadedEvent(job.getId()));
+            eventPublisher.publishEvent(new DocumentProcessingEvent(job.getId()));
 
             log.info("Document uploaded successfully, documentId={}, userId={}", documentId, userId);
 
@@ -142,7 +142,7 @@ public class DocumentService {
             objectStorageService.delete(document.getR2ObjectKey());
 
             documentChunkRepository.deleteAllByDocumentId(document.getId());
-            
+
             documentRepository.delete(document);
 
             log.info("Document deleted successfully, documentId={}, userId={}", documentId, userId);
@@ -161,34 +161,6 @@ public class DocumentService {
 
     private String buildObjectKey(UUID userId, UUID documentId, String filename) {
         return "users/" + userId + "/documents/" + documentId + "/" + filename;
-    }
-
-    public void retryProcessing(UUID userId, UUID documentId) {
-        Document document = documentRepository.findById(documentId).orElseThrow(() ->
-                new IllegalArgumentException("Document not found: " + documentId));
-
-        DocumentProcessingJob job = documentProcessingJobRepository.findTopByDocumentIdOrderByCreatedAtDesc(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("Processing job not found: " + documentId));
-
-        if (job.getStatus() != ProcessingStatus.FAILED) {
-            throw new IllegalStateException("Only failed document processing jobs can be retried");
-        }
-
-        job.setStatus(ProcessingStatus.PENDING);
-        job.setStartedAt(null);
-        job.setCompletedAt(null);
-        job.setErrorCode(null);
-        job.setErrorMessage(null);
-
-        documentProcessingJobRepository.save(job);
-
-        document.setStatus(DocumentStatus.PROCESSING);
-        document.setFailureReason(null);
-        document.setProcessedAt(null);
-
-        documentRepository.save(document);
-
-        applicationEventPublisher.publishEvent(new DocumentUploadedEvent(job.getId()));
     }
 
     public boolean validateAccess(UUID userId, UUID documentId) {

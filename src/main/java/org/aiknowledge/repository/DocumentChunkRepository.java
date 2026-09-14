@@ -29,4 +29,6 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
             DELETE FROM DocumentChunk dc WHERE dc.documentId = :documentId
             """)
     void deleteAllByDocumentId(@Param("documentId") UUID documentId);
+
+    List<DocumentChunk> findAllByDocumentIdOrderByChunkIndex(UUID documentId);
 }

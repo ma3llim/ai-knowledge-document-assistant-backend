@@ -44,6 +44,9 @@ spring:
     aws:
       region:
         static: ${AWS_REGION:ap-south-2}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
 app:
   cors:
     allowed-origins:
@@ -80,6 +83,10 @@ app:
       api-key: ${JINA_API_KEY}
       base-url: https://api.jina.ai
       model: jina-embeddings-v4
+
+  sqs:
+    document-processing-queue: document-processing-queue
+    document-summary-queue: document-summary-queue
 
   rag:
     retrieval:
