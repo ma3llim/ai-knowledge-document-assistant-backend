@@ -1,6 +1,7 @@
 package org.aiknowledge.repository;
 
 import org.aiknowledge.entity.DocumentChunk;
+import org.aiknowledge.projection.DocumentChunkContentProjection;
 import org.aiknowledge.projection.SimilarChunkProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -30,5 +31,13 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
             """)
     void deleteAllByDocumentId(@Param("documentId") UUID documentId);
 
-    List<DocumentChunk> findAllByDocumentIdOrderByChunkIndex(UUID documentId);
+    List<DocumentChunkContentProjection> findAllByDocumentIdOrderByChunkIndex(UUID documentId);
+
+    @Modifying
+    @Query("""
+            UPDATE DocumentChunk c SET c.chunkSummary = :summary, c.chunkSummaryEmbedding = :summaryEmbedding
+            WHERE c.id = :chunkId
+            """)
+    int updateSummary(@Param("chunkId") UUID chunkId, @Param("summary") String summary,
+                      @Param("summaryEmbedding") float[] summaryEmbedding);
 }

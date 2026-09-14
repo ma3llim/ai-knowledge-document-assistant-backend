@@ -16,11 +16,23 @@ public class ChunkSummarizer {
     }
 
     public String summarize(String chunk) {
-        return chatClient
+        var response = chatClient
                 .prompt()
                 .system(SummarizingPrompt.SYSTEM_PROMPT)
                 .user(chunk)
                 .call()
-                .content();
+                .chatResponse();
+        
+        if (response == null || response.getResult() == null) {
+            throw new IllegalStateException("Summarization model returned no response");
+        }
+
+        String content = response.getResult().getOutput().getText();
+
+        if (content == null || content.isBlank()) {
+            throw new IllegalStateException("Summarization model returned empty content");
+        }
+
+        return content;
     }
 }

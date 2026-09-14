@@ -103,7 +103,7 @@ app:
     openrouter:
       api-key: ${OPENROUTER_API_KEY}
       base-url: https://openrouter.ai/api
-      model: nvidia/nemotron-3-super-120b-a12b:free
+      model: liquid/lfm-2.5-2.6b:free
       temperature: 0.2
       max-tokens: 200
 

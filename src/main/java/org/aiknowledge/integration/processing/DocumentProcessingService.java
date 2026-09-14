@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.Document;
 import org.aiknowledge.entity.DocumentChunk;
 import org.aiknowledge.entity.DocumentProcessingJob;
+import org.aiknowledge.entity.SummaryProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.enums.ProcessingErrorCode;
 import org.aiknowledge.enums.ProcessingStatus;
@@ -12,6 +13,7 @@ import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.document.DocumentContentNormalizer;
 import org.aiknowledge.integration.document.DocumentReaderFactory;
 import org.aiknowledge.integration.embedding.EmbeddingService;
+import org.aiknowledge.integration.sqs.event.DocumentSummaryEvent;
 import org.aiknowledge.integration.sqs.publisher.DocumentSummaryPublisher;
 import org.aiknowledge.integration.storage.ObjectStorageService;
 import org.aiknowledge.integration.summarization.ChunkSummarizer;
@@ -88,15 +90,15 @@ public class DocumentProcessingService {
             job.setCompletedAt(Instant.now());
             documentProcessingJobRepository.save(job);
 
-//            SummaryProcessingJob summaryProcessingJob = SummaryProcessingJob.builder()
-//                    .documentId(document.getId())
-//                    .status(DocumentStatus.PROCESSING)
-//                    .build();
-//
-//            summaryProcessingJobRepository.save(summaryProcessingJob);
+            SummaryProcessingJob summaryProcessingJob = SummaryProcessingJob.builder()
+                    .documentId(document.getId())
+                    .status(DocumentStatus.PROCESSING)
+                    .build();
+
+            summaryProcessingJobRepository.save(summaryProcessingJob);
             log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), documentChunks.size());
 
-            // documentSummaryPublisher.publish(new DocumentSummaryEvent(summaryProcessingJob.getId()));
+            documentSummaryPublisher.publish(new DocumentSummaryEvent(summaryProcessingJob.getId()));
         } catch (Exception exception) {
             log.error("Document processing failed. documentId={}", job.getDocumentId(), exception);
 

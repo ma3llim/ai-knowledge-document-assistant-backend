@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
 
     // 401 - Authentication
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiErrorResponse> handleAuthenticationException(AuthenticationException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleAuthenticationException(HttpServletRequest request) {
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .success(false)
                 .message("Authentication failed")
@@ -115,7 +115,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ApiErrorResponse> handleAuthorizationDeniedExceptionException(AuthorizationDeniedException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleAuthorizationDeniedExceptionException(HttpServletRequest request) {
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .success(false)
                 .message("You do not have permission to access this resource")
@@ -141,7 +141,7 @@ public class GlobalExceptionHandler {
 
     // 403 - Authorization
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiErrorResponse> handleAccessDeniedException(AccessDeniedException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleAccessDeniedException(HttpServletRequest request) {
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .success(false)
                 .message("Access denied")
@@ -178,7 +178,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(MaxUploadSizeExceededException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(HttpServletRequest request) {
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .success(false)
                 .message("Uploaded file size exceeds the maximum allowed limit")
@@ -214,7 +214,7 @@ public class GlobalExceptionHandler {
 
 
     // 500 - Unexpected Exception
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler({Exception.class, InternalServerException.class})
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(Exception exception, HttpServletRequest request) {
         log.error("Unhandled exception: method={}, path={}", request.getMethod(), request.getRequestURI(), exception);
         ApiErrorResponse response = ApiErrorResponse.builder()
