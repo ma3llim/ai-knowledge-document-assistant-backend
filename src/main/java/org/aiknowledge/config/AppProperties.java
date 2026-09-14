@@ -80,6 +80,10 @@ public record AppProperties(
         }
 
         public record Rag(
+                int chunkSize,
+                int chunkOverlap,
+                int minChunkLength,
+                int maxChunkSize,
                 Retrieval retrieval
         ) {
             public record Retrieval(

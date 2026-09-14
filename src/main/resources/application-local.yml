@@ -81,20 +81,20 @@ app:
       document-summary-queue: document-summary-queue
 
   ai:
-    processing:
-      chunk-size: 1000
-      chunk-overlap: 200
+    rag:
+      chunk-size: 800
+      chunk-overlap: 120
+      min-chunk-length: 100
+      max-chunk-size: 1000
+      retrieval:
+        similarity-threshold: 0.70
+        top-k: 5
 
     embedding:
       jina:
         api-key: ${JINA_API_KEY}
         base-url: https://api.jina.ai
         model: jina-embeddings-v4
-
-    rag:
-      retrieval:
-        similarity-threshold: 0.70
-        top-k: 5
 
     query-specifier:
       cloudflare:
