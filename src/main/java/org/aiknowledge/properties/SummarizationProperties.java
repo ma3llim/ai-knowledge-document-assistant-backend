@@ -2,7 +2,7 @@ package org.aiknowledge.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "app.summarization.openrouter")
+@ConfigurationProperties(prefix = "app.summarization")
 public record SummarizationProperties(
         String apiKey,
         String baseUrl,

@@ -2,6 +2,9 @@ package org.aiknowledge.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -57,12 +60,16 @@ public class DocumentChunk {
     private Integer slideNumber;
 
     @Column(name = "embedding", columnDefinition = "vector(1024)")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 1024)
     private float[] embedding;
 
     @Column(name = "chunk_summary", columnDefinition = "TEXT")
     private String chunkSummary;
 
     @Column(name = "chunk_summary_embedding", columnDefinition = "vector(1024)")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 1024)
     private float[] chunkSummaryEmbedding;
 
     @CreatedDate

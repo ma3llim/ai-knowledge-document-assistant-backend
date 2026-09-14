@@ -3,13 +3,13 @@ package org.aiknowledge.integration.processing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.Document;
+import org.aiknowledge.entity.DocumentChunk;
 import org.aiknowledge.entity.SummaryProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.exception.InternalServerException;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.summarization.ChunkSummarizer;
-import org.aiknowledge.projection.DocumentChunkContentProjection;
 import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.repository.SummaryProcessingJobRepository;
@@ -29,8 +29,6 @@ public class DocumentSummaryService {
     private final EmbeddingService embeddingService;
 
     public void processSummary(UUID jobId) {
-        log.info("Starting document summary processing. summaryJobId={}", jobId);
-
         SummaryProcessingJob summaryJob = summaryProcessingJobRepository.findById(jobId).orElseThrow(() ->
                 new ResourceNotFoundException("Summary processing job not found: " + jobId)
         );
@@ -46,22 +44,18 @@ public class DocumentSummaryService {
             document.setStatus(DocumentStatus.PROCESSING);
             documentRepository.save(document);
 
-            List<DocumentChunkContentProjection> chunks = documentChunkRepository.findAllByDocumentIdOrderByChunkIndex(document.getId());
+            List<DocumentChunk> chunks = documentChunkRepository.findAllByDocumentIdOrderByChunkIndex(document.getId());
 
-            log.info("Loaded {} chunks for summary processing. documentId={}", chunks.size(), document.getId());
-
-            for (DocumentChunkContentProjection chunk : chunks) {
-                log.debug("Generating summary for chunk. documentId={}, chunkIndex={}", document.getId(),
-                        chunk.getChunkIndex());
+            for (DocumentChunk chunk : chunks) {
+                log.debug("Generating summary for chunk. documentId={}, chunkIndex={}", document.getId(), chunk.getChunkIndex());
 
                 String summary = chunkSummarizer.summarize(chunk.getContent());
-                log.info("Summary: {}", summary);
-
                 float[] summaryEmbedding = embeddingService.embedQuery(summary);
 
-                log.info("summaryEmbedding: {}", summaryEmbedding);
+                chunk.setChunkSummary(summary);
+                chunk.setChunkSummaryEmbedding(summaryEmbedding);
 
-                documentChunkRepository.updateSummary(chunk.getId(), summary, summaryEmbedding);
+                documentChunkRepository.save(chunk);
             }
 
             summaryJob.setStatus(DocumentStatus.READY);

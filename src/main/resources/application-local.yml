@@ -95,17 +95,16 @@ app:
 
   query-specifier:
     cloudflare:
-      api-key: ${CLOUDFLARE_API_KEY}
-      base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai
+      api-key: ${CLOUDFLARE_QUERY_SPECIFIER_API_KEY}
+      base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_QUERY_SPECIFIER_ACCOUNT_ID}/ai
       model: "@cf/meta/llama-3.1-8b-instruct-fast"
 
   summarization:
-    openrouter:
-      api-key: ${OPENROUTER_API_KEY}
-      base-url: https://openrouter.ai/api
-      model: liquid/lfm-2.5-2.6b:free
-      temperature: 0.2
-      max-tokens: 200
+    api-key: ${CLOUDFLARE_QUERY_SUMMARIZATION_API_KEY}
+    base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_QUERY_SUMMARIZATION_ACCOUNT_ID}/ai
+    model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    temperature: 0.2
+    max-tokens: 200
 
 logging:
   level:
