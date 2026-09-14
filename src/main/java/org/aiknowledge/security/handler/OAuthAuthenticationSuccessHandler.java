@@ -1,13 +1,12 @@
 package org.aiknowledge.security.handler;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aiknowledge.constant.OAuthConstants;
+import org.aiknowledge.config.Constants;
 import org.aiknowledge.security.CustomOidcUser;
-import org.aiknowledge.service.AuthenticationService;
+import org.aiknowledge.service.AuthService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -20,16 +19,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class OAuthAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
-    private final AuthenticationService authenticationService;
+    private final AuthService authService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         CustomOidcUser oidcUser = (CustomOidcUser) authentication.getPrincipal();
         UUID userId = oidcUser.getUserId();
 
-        String oneTimeCode = authenticationService.createOAuthLoginCode(userId);
+        String oneTimeCode = authService.createOAuthLoginCode(userId);
 
-        String redirectUrl = UriComponentsBuilder.fromUriString(OAuthConstants.FRONTEND_OAUTH_CALLBACK_URL).queryParam(
+        String redirectUrl = UriComponentsBuilder.fromUriString(Constants.FRONTEND_OAUTH_CALLBACK_URL).queryParam(
                 "code", oneTimeCode).build().toUriString();
 
         log.info("OAuth login successful, redirecting userId={}", userId);

@@ -1,7 +1,6 @@
 package org.aiknowledge.config;
 
 import lombok.RequiredArgsConstructor;
-import org.aiknowledge.properties.R2Properties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -14,18 +13,19 @@ import java.net.URI;
 @Configuration
 @RequiredArgsConstructor
 public class R2Config {
-    private final R2Properties r2Properties;
+    private final AppProperties r2Properties;
 
     @Bean
     public S3Client r2Client() {
         AwsBasicCredentials credentials = AwsBasicCredentials.create(
-                r2Properties.getAccessKey(),
-                r2Properties.getSecretKey()
+                r2Properties.storage().accessKey(),
+                r2Properties.storage().secretKey()
         );
 
-        return S3Client.builder().endpointOverride(URI.create(r2Properties.getEndpoint())).region(Region.of("auto"))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials)).build();
+        return S3Client.builder()
+                .endpointOverride(URI.create(r2Properties.storage().endpoint()))
+                .region(Region.of("auto"))
+                .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                .build();
     }
-
-
 }

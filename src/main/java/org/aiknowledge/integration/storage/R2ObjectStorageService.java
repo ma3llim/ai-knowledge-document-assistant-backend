@@ -2,7 +2,7 @@ package org.aiknowledge.integration.storage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aiknowledge.properties.R2Properties;
+import org.aiknowledge.config.AppProperties;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -19,29 +19,29 @@ import java.io.InputStream;
 @Slf4j
 public class R2ObjectStorageService implements ObjectStorageService {
     private final S3Client r2Client;
-    private final R2Properties r2Properties;
+    private final AppProperties r2Properties;
 
     @Override
     public boolean exists(String objectKey) {
         try {
-            HeadObjectRequest request = HeadObjectRequest.builder().bucket(r2Properties.getBucket()).key(objectKey).build();
+            HeadObjectRequest request = HeadObjectRequest.builder().bucket(r2Properties.storage().bucket()).key(objectKey).build();
             r2Client.headObject(request);
 
             return true;
         } catch (S3Exception exception) {
             if (exception.statusCode() == 404) {
-                log.info("R2 object does not exist: bucket={}, objectKey={}", r2Properties.getBucket(), objectKey);
+                log.info("R2 object does not exist: bucket={}, objectKey={}", r2Properties.storage().bucket(), objectKey);
                 return false;
             }
             log.error("Failed to check R2 object existence: bucket={}, objectKey={}, statusCode={}",
-                    r2Properties.getBucket(), objectKey, exception.statusCode(), exception);
+                    r2Properties.storage().bucket(), objectKey, exception.statusCode(), exception);
             throw exception;
         }
     }
 
     @Override
     public void delete(String objectKey) {
-        DeleteObjectRequest request = DeleteObjectRequest.builder().bucket(r2Properties.getBucket())
+        DeleteObjectRequest request = DeleteObjectRequest.builder().bucket(r2Properties.storage().bucket())
                 .key(objectKey)
                 .build();
         r2Client.deleteObject(request);
@@ -51,7 +51,7 @@ public class R2ObjectStorageService implements ObjectStorageService {
     @Override
     public void upload(String objectKey, MultipartFile file) throws IOException {
         PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(r2Properties.getBucket())
+                .bucket(r2Properties.storage().bucket())
                 .key(objectKey)
                 .contentType(file.getContentType())
                 .contentLength(file.getSize())
@@ -64,7 +64,7 @@ public class R2ObjectStorageService implements ObjectStorageService {
     @Override
     public InputStream download(String objectKey) {
         return r2Client.getObject(GetObjectRequest.builder()
-                .bucket(r2Properties.getBucket())
+                .bucket(r2Properties.storage().bucket())
                 .key(objectKey)
                 .build()
         );

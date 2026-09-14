@@ -1,7 +1,6 @@
 package org.aiknowledge.config;
 
 import lombok.RequiredArgsConstructor;
-import org.aiknowledge.constant.SecurityConstants;
 import org.aiknowledge.security.GoogleOidcUserService;
 import org.aiknowledge.security.JwtAuthenticationFilter;
 import org.aiknowledge.security.handler.OAuthAuthenticationFailureHandler;
@@ -28,7 +27,7 @@ public class SecurityConfig {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(auth -> auth.requestMatchers(SecurityConstants.PUBLIC_ENDPOINTS)
+                .authorizeHttpRequests(auth -> auth.requestMatchers(Constants.PUBLIC_ENDPOINTS)
                         .permitAll().anyRequest().authenticated())
                 .oauth2Login(oauth ->
                         oauth.authorizationEndpoint(endpointConfig ->

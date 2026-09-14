@@ -1,4 +1,4 @@
-package org.aiknowledge.service.chat;
+package org.aiknowledge.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,6 @@ import org.aiknowledge.integration.query.specifier.QuerySpecifier;
 import org.aiknowledge.projection.SimilarChunkProjection;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.SecurityUserService;
-import org.aiknowledge.service.DocumentService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public class ChatService {
         QuerySpec querySpec = querySpecifier.classify(userQuery);
 
         List<SimilarChunkProjection> vectorChunks = new ArrayList<>();
-        
+
         switch (querySpec.retrievalStrategy()) {
             case NONE -> log.info("No document retrieval required.");
             case SEMANTIC_SEARCH -> {

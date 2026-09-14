@@ -1,10 +1,10 @@
 package org.aiknowledge.integration.embedding;
 
+import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.dto.request.JinaEmbeddingRequest;
 import org.aiknowledge.dto.response.JinaEmbeddingResponse;
 import org.aiknowledge.exception.JinaRateLimitException;
 import org.aiknowledge.exception.JinaTransientException;
-import org.aiknowledge.properties.JinaEmbeddingProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.retry.annotation.Backoff;
@@ -19,14 +19,13 @@ import java.util.List;
 
 @Component
 public class JinaEmbeddingClient {
-    private final JinaEmbeddingProperties jinaEmbeddingProperties;
+    private final AppProperties properties;
     private final RestClient restClient;
 
-    public JinaEmbeddingClient(JinaEmbeddingProperties jinaEmbeddingProperties) {
-        this.jinaEmbeddingProperties = jinaEmbeddingProperties;
-
-        this.restClient = RestClient.builder().baseUrl(jinaEmbeddingProperties.getBaseUrl())
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + jinaEmbeddingProperties.getApiKey())
+    public JinaEmbeddingClient(AppProperties appProperties) {
+        this.properties = appProperties;
+        this.restClient = RestClient.builder().baseUrl(properties.ai().embedding().jina().baseUrl())
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + properties.ai().embedding().jina().apiKey())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
@@ -36,7 +35,6 @@ public class JinaEmbeddingClient {
                     JinaRateLimitException.class,
                     JinaTransientException.class
             },
-            maxAttempts = 3,
             backoff = @Backoff(
                     delay = 1000,
                     multiplier = 2.0,
@@ -44,7 +42,7 @@ public class JinaEmbeddingClient {
             )
     )
     public JinaEmbeddingResponse embed(List<String> texts) {
-        JinaEmbeddingRequest request = new JinaEmbeddingRequest(jinaEmbeddingProperties.getModel(), "retrieval.passage", texts, 1024);
+        JinaEmbeddingRequest request = new JinaEmbeddingRequest(properties.ai().embedding().jina().model(), "retrieval.passage", texts, 1024);
 
         try {
             return restClient.post()

@@ -6,6 +6,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.dto.response.UserAndTokenResponseDto;
 import org.aiknowledge.dto.response.UserResponseDto;
 import org.aiknowledge.entity.OAuthLoginCode;
@@ -13,8 +14,6 @@ import org.aiknowledge.entity.RefreshToken;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.exception.UnauthorizedException;
-import org.aiknowledge.properties.CookieProperties;
-import org.aiknowledge.properties.JwtProperties;
 import org.aiknowledge.repository.OAuthLoginCodeRepository;
 import org.aiknowledge.repository.RefreshTokenRepository;
 import org.aiknowledge.repository.UserRepository;
@@ -36,13 +35,12 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthenticationService {
+public class AuthService {
     private final UserRepository userRepository;
     private final OAuthLoginCodeRepository oauthLoginCodeRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
-    private final JwtProperties jwtProperties;
-    private final CookieProperties cookieProperties;
+    private final AppProperties properties;
     private final ObjectMapper objectMapper;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -57,7 +55,7 @@ public class AuthenticationService {
         OAuthLoginCode loginCode = OAuthLoginCode.builder()
                 .codeHash(codeHash)
                 .userId(userId)
-                .expiresAt(Instant.now().plusSeconds(jwtProperties.getOAuthLoginCodeExpiration()))
+                .expiresAt(Instant.now().plusSeconds(properties.jwt().oauthLoginCodeExpiration()))
                 .build();
 
         oauthLoginCodeRepository.save(loginCode);
@@ -99,7 +97,7 @@ public class AuthenticationService {
                 .id(refreshTokenId)
                 .userId(user.getId())
                 .refreshToken(refreshToken)
-                .expiresAt(Instant.now().plusSeconds(jwtProperties.getRefreshTokenExpiration()))
+                .expiresAt(Instant.now().plusSeconds(properties.jwt().refreshTokenExpiration()))
                 .build();
 
         refreshTokenRepository.save(refreshTokenEntity);
@@ -168,7 +166,7 @@ public class AuthenticationService {
                 .id(newTokenId)
                 .userId(userId)
                 .refreshToken(newRefreshToken)
-                .expiresAt(Instant.now().plusSeconds(jwtProperties.getRefreshTokenExpiration()))
+                .expiresAt(Instant.now().plusSeconds(properties.jwt().refreshTokenExpiration()))
                 .build();
 
         refreshTokenRepository.save(newRefreshTokenEntity);
@@ -202,23 +200,23 @@ public class AuthenticationService {
     }
 
     private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        ResponseCookie cookie = ResponseCookie.from(cookieProperties.getRefreshTokenName(), refreshToken)
-                .httpOnly(cookieProperties.isHttpOnly())
-                .secure(cookieProperties.isSecure())
-                .sameSite(cookieProperties.getSameSite())
-                .path(cookieProperties.getPath())
-                .maxAge(Duration.ofMillis(jwtProperties.getRefreshTokenExpiration()))
+        ResponseCookie cookie = ResponseCookie.from(properties.cookie().accessTokenName(), refreshToken)
+                .httpOnly(properties.cookie().httpOnly())
+                .secure(properties.cookie().secure())
+                .sameSite(properties.cookie().sameSite())
+                .path(properties.cookie().path())
+                .maxAge(Duration.ofMillis(properties.jwt().refreshTokenExpiration()))
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private void clearRefreshTokenCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(cookieProperties.getRefreshTokenName(), "")
-                .httpOnly(cookieProperties.isHttpOnly())
-                .secure(cookieProperties.isSecure())
-                .sameSite(cookieProperties.getSameSite())
-                .path(cookieProperties.getPath())
+        ResponseCookie cookie = ResponseCookie.from(properties.cookie().accessTokenName(), "")
+                .httpOnly(properties.cookie().httpOnly())
+                .secure(properties.cookie().secure())
+                .sameSite(properties.cookie().sameSite())
+                .path(properties.cookie().path())
                 .maxAge(Duration.ZERO)
                 .build();
 

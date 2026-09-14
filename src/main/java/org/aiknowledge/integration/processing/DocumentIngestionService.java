@@ -16,12 +16,12 @@ import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.sqs.event.DocumentSummaryEvent;
 import org.aiknowledge.integration.sqs.publisher.DocumentSummaryPublisher;
 import org.aiknowledge.integration.storage.ObjectStorageService;
-import org.aiknowledge.integration.summarization.ChunkSummarizer;
 import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.repository.SummaryProcessingJobRepository;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +34,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DocumentProcessingService {
+public class DocumentIngestionService {
     private final DocumentRepository documentRepository;
     private final ObjectStorageService objectStorageService;
     private final DocumentReaderFactory documentReaderFactory;
@@ -44,8 +44,8 @@ public class DocumentProcessingService {
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final SummaryProcessingJobRepository summaryProcessingJobRepository;
-    private final ChunkSummarizer chunkSummarizer;
     private final DocumentSummaryPublisher documentSummaryPublisher;
+    private final VectorStore vectorStore;
 
     public void process(UUID jobId) {
         DocumentProcessingJob job = documentProcessingJobRepository.findById(jobId).orElseThrow(() ->

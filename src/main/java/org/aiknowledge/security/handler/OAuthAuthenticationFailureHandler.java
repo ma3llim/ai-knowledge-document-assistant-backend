@@ -3,7 +3,7 @@ package org.aiknowledge.security.handler;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.aiknowledge.constant.OAuthConstants;
+import org.aiknowledge.config.Constants;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ public class OAuthAuthenticationFailureHandler implements AuthenticationFailureH
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         log.warn("OAuth authentication failed: {}", exception.getMessage());
 
-        String redirectUrl = UriComponentsBuilder.fromUriString(OAuthConstants.FRONTEND_OAUTH_CALLBACK_URL)
+        String redirectUrl = UriComponentsBuilder.fromUriString(Constants.FRONTEND_OAUTH_CALLBACK_URL)
                 .queryParam("error", "OAUTH_AUTHENTICATION_FAILED").build().toUriString();
 
         response.sendRedirect(redirectUrl);

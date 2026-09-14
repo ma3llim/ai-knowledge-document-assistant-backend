@@ -1,6 +1,6 @@
 package org.aiknowledge.integration.query.specifier;
 
-import org.aiknowledge.properties.QuerySpecifierProperties;
+import org.aiknowledge.config.AppProperties;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class QuerySpecifierConfig {
     @Bean
-    public OpenAiChatModel cloudflareOpenAiApi(QuerySpecifierProperties properties) {
-        var cloudflare = properties.cloudflare();
+    public OpenAiChatModel cloudflareOpenAiApi(AppProperties properties) {
+        var cloudflare = properties.ai().querySpecifier().cloudflare();
 
         var api = OpenAiApi.builder()
                 .apiKey(cloudflare.apiKey())

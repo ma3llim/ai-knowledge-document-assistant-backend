@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.aiknowledge.dto.ApiSuccessResponse;
 import org.aiknowledge.dto.request.OAuthExchangeRequestDto;
 import org.aiknowledge.dto.response.UserAndTokenResponseDto;
-import org.aiknowledge.service.AuthenticationService;
+import org.aiknowledge.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final AuthenticationService authenticationService;
+    private final AuthService authService;
 
     @PostMapping("/oauth/exchange")
     public ResponseEntity<ApiSuccessResponse<UserAndTokenResponseDto>> exchangeOAuthCode(
             @Valid @RequestBody OAuthExchangeRequestDto request, HttpServletRequest httpServletRequest,
             HttpServletResponse response) {
 
-        UserAndTokenResponseDto userAndTokenResponseDto = authenticationService.exchangeOAuthCode(request.code(), response);
+        UserAndTokenResponseDto userAndTokenResponseDto = authService.exchangeOAuthCode(request.code(), response);
 
         return ResponseEntity.ok(
                 ApiSuccessResponse.<UserAndTokenResponseDto>builder()
@@ -41,7 +41,7 @@ public class AuthController {
     public ResponseEntity<ApiSuccessResponse<UserAndTokenResponseDto>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = extractRefreshToken(request);
 
-        UserAndTokenResponseDto result = authenticationService.refreshToken(refreshToken, response);
+        UserAndTokenResponseDto result = authService.refreshToken(refreshToken, response);
 
         return ResponseEntity.ok(ApiSuccessResponse.<UserAndTokenResponseDto>builder()
                 .success(true)
@@ -55,7 +55,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = extractRefreshToken(request);
-        authenticationService.logout(refreshToken, response);
+        authService.logout(refreshToken, response);
 
         return ResponseEntity.noContent().build();
     }
