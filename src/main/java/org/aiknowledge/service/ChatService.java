@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
-import org.aiknowledge.integration.document.DocumentRetrievalService;
 import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.query.model.QuerySpec;
 import org.aiknowledge.integration.query.specifier.QuerySpecifier;
@@ -26,7 +25,6 @@ public class ChatService {
     private final DocumentService documentService;
     private final QuerySpecifier querySpecifier;
     private final EmbeddingService embeddingService;
-    private final DocumentRetrievalService documentRetrievalService;
 
     public void processQuestion(UUID documentId, String userQuery) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
@@ -44,15 +42,6 @@ public class ChatService {
         QuerySpec querySpec = querySpecifier.classify(userQuery);
 
         List<SimilarChunkProjection> vectorChunks = new ArrayList<>();
-
-        switch (querySpec.retrievalStrategy()) {
-            case NONE -> log.info("No document retrieval required.");
-            case SEMANTIC_SEARCH -> {
-                float[] queryVector = embeddingService.embedQuery(userQuery);
-                vectorChunks = documentRetrievalService.retrieve(documentId, queryVector);
-            }
-        }
-
 
     }
 

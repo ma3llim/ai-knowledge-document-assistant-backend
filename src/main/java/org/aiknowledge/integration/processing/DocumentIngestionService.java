@@ -14,7 +14,6 @@ import org.aiknowledge.integration.document.DocumentReaderFactory;
 import org.aiknowledge.integration.storage.ObjectStorageService;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
-import org.aiknowledge.repository.SummaryProcessingJobRepository;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
@@ -32,7 +31,6 @@ public class DocumentIngestionService {
     private final DocumentReaderFactory documentReaderFactory;
     private final DocumentContentNormalizer documentContentNormalizer;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
-    private final SummaryProcessingJobRepository summaryProcessingJobRepository;
     private final VectorStore vectorStore;
     private final AppProperties properties;
 
@@ -102,8 +100,6 @@ public class DocumentIngestionService {
             job.setStatus(ProcessingStatus.COMPLETED);
             job.setCompletedAt(Instant.now());
             documentProcessingJobRepository.save(job);
-
-            log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), enrichedChunks.size());
         } catch (Exception exception) {
             log.error("Document processing failed. documentId={}", job.getDocumentId(), exception);
 

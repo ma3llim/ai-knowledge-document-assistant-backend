@@ -15,7 +15,6 @@ import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.sqs.event.DocumentProcessingEvent;
 import org.aiknowledge.integration.storage.ObjectStorageService;
-import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;
@@ -37,7 +36,6 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final ObjectStorageService objectStorageService;
     private final DocumentFileValidator documentFileValidator;
-    private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -140,13 +138,6 @@ public class DocumentService {
 
         try {
             objectStorageService.delete(document.getR2ObjectKey());
-
-            documentChunkRepository.deleteAllByDocumentId(document.getId());
-
-            documentRepository.delete(document);
-
-            log.info("Document deleted successfully, documentId={}, userId={}", documentId, userId);
-
         } catch (RuntimeException exception) {
             document.setStatus(DocumentStatus.FAILED);
             document.setFailureReason("Failed to delete document from storage");
