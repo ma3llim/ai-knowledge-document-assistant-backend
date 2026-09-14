@@ -5,15 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.entity.Document;
 import org.aiknowledge.entity.DocumentProcessingJob;
-import org.aiknowledge.entity.SummaryProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.enums.ProcessingErrorCode;
 import org.aiknowledge.enums.ProcessingStatus;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.document.DocumentContentNormalizer;
 import org.aiknowledge.integration.document.DocumentReaderFactory;
-import org.aiknowledge.integration.sqs.event.DocumentSummaryEvent;
-import org.aiknowledge.integration.sqs.publisher.DocumentSummaryPublisher;
 import org.aiknowledge.integration.storage.ObjectStorageService;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
@@ -36,7 +33,6 @@ public class DocumentIngestionService {
     private final DocumentContentNormalizer documentContentNormalizer;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final SummaryProcessingJobRepository summaryProcessingJobRepository;
-    private final DocumentSummaryPublisher documentSummaryPublisher;
     private final VectorStore vectorStore;
     private final AppProperties properties;
 
@@ -107,15 +103,7 @@ public class DocumentIngestionService {
             job.setCompletedAt(Instant.now());
             documentProcessingJobRepository.save(job);
 
-            SummaryProcessingJob summaryProcessingJob = SummaryProcessingJob.builder()
-                    .documentId(document.getId())
-                    .status(DocumentStatus.PROCESSING)
-                    .build();
-
-            summaryProcessingJobRepository.save(summaryProcessingJob);
             log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), enrichedChunks.size());
-
-            documentSummaryPublisher.publish(new DocumentSummaryEvent(summaryProcessingJob.getId()));
         } catch (Exception exception) {
             log.error("Document processing failed. documentId={}", job.getDocumentId(), exception);
 
