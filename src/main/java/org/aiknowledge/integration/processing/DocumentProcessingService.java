@@ -94,7 +94,7 @@ public class DocumentProcessingService {
 //                    .build();
 //
 //            summaryProcessingJobRepository.save(summaryProcessingJob);
-//            log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), documentChunks.size());
+            log.info("Document chunks saved successfully. documentId={}, chunks={}", job.getDocumentId(), documentChunks.size());
 
             // documentSummaryPublisher.publish(new DocumentSummaryEvent(summaryProcessingJob.getId()));
         } catch (Exception exception) {
