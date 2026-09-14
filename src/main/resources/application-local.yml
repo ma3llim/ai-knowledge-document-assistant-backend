@@ -40,6 +40,10 @@ spring:
         speech: none
         transcription: none
 
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:ap-south-2}
 app:
   cors:
     allowed-origins:

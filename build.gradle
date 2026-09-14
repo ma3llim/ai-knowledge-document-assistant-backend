@@ -51,6 +51,8 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     // AWS SDK
     implementation 'software.amazon.awssdk:aws-sdk-java:2.54.13'
+    implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.4.0")
+    implementation "io.awspring.cloud:spring-cloud-aws-starter-sqs"
     // Spring AI
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     // Spring AI PDF Reader
