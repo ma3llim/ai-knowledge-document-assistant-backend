@@ -12,6 +12,7 @@ import org.aiknowledge.integration.document.DocumentContentNormalizer;
 import org.aiknowledge.integration.document.DocumentReaderFactory;
 import org.aiknowledge.integration.embedding.EmbeddingService;
 import org.aiknowledge.integration.storage.ObjectStorageService;
+import org.aiknowledge.integration.summarization.ChunkSummarizer;
 import org.aiknowledge.repository.DocumentChunkRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
@@ -38,6 +39,7 @@ public class DocumentProcessingAsyncService {
     private final EmbeddingService embeddingService;
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
+    private final ChunkSummarizer chunkSummarizer;
 
     @Async("documentProcessingExecutor")
     public void processAsync(UUID jobId) {
@@ -71,7 +73,14 @@ public class DocumentProcessingAsyncService {
             List<DocumentChunk> documentChunks = new ArrayList<>();
 
             for (int i = 0; i < chunks.size(); i++) {
-                DocumentChunk documentChunk = buildDocumentChunk(job.getDocumentId(), i, chunks.get(i), embeddings.get(i));
+                org.springframework.ai.document.Document chunk = chunks.get(i);
+                String content = chunk.getText();
+
+                String chunkSummary = chunkSummarizer.summarize(content);
+                float[] summaryEmbedding = embeddingService.embedQuery(chunkSummary);
+
+                DocumentChunk documentChunk = buildDocumentChunk(job.getDocumentId(), i, chunks.get(i),
+                        embeddings.get(i), content, summaryEmbedding);
                 documentChunks.add(documentChunk);
             }
             documentChunkRepository.saveAll(documentChunks);
@@ -102,7 +111,9 @@ public class DocumentProcessingAsyncService {
         }
     }
 
-    private DocumentChunk buildDocumentChunk(UUID documentId, int chunkIndex, org.springframework.ai.document.Document chunk, float[] embedding) {
+    private DocumentChunk buildDocumentChunk(
+            UUID documentId, int chunkIndex, org.springframework.ai.document.Document chunk, float[] embedding,
+            String summary, float[] summaryEmbedding) {
         Map<String, Object> metadata = chunk.getMetadata();
         return DocumentChunk.builder()
                 .documentId(documentId)
@@ -114,6 +125,8 @@ public class DocumentProcessingAsyncService {
                 .sheetName(getStringMetadata(metadata, "sheet_name"))
                 .slideNumber(getIntegerMetadata(metadata, "slide_number"))
                 .embedding(embedding)
+                .chunkSummary(summary)
+                .chunkSummaryEmbedding(summaryEmbedding)
                 .build();
     }
 

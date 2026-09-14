@@ -88,6 +88,14 @@ app:
       base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai
       model: "@cf/meta/llama-3.1-8b-instruct-fast"
 
-#logging:
-#  level:
-#    org.springframework.ai.chat.client.advisor: DEBUG
+  summarization:
+    openrouter:
+      api-key: ${OPENROUTER_API_KEY}
+      base-url: https://openrouter.ai/api
+      model: nvidia/nemotron-3-super-120b-a12b:free
+      temperature: 0.2
+      max-tokens: 200
+
+logging:
+  level:
+    org.springframework.ai.chat.client.advisor: DEBUG
