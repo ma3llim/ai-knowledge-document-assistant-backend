@@ -33,9 +33,9 @@ public class ChatPromptBuilder {
                         
                         CITATIONS:
                         - For information supported by the document context, provide citations.
-                        - Each citation must reference the 1-based chunkIndex of the relevant context chunk.
-                        - Do not invent chunk indexes.
-                        - If no document context supports the answer, return an empty citations list.
+                        - Each citation must reference the 1-based source number of a relevant SOURCE in the provided context.
+                        - Do not invent source numbers.
+                        - If no provided source supports the answer, return an empty citations list.
                         
                         INSUFFICIENT INFORMATION:
                         - If the provided document context does not contain enough information to answer the user's question, do not guess or invent information.
@@ -45,10 +45,10 @@ public class ChatPromptBuilder {
                         RESPONSE FORMAT:
                         - Return the response using the required structured response format.
                         - The response must contain only these fields:
-                          - "answer": the answer to the user's question.
-                          - "citations": a list of citation references.
+                            - "answer": the answer to the user's question.
+                            - "citations": a list of citation references.
                         - Each citation must contain:
-                          - "chunkIndex": the 1-based index of the supporting document chunk.
+                            - "source": the 1-based source number of the supporting SOURCE.
                         - Do not add any additional fields.
                         - Do not include markdown fences or explanatory text outside the structured response.
                         

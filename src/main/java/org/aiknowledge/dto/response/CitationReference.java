@@ -1,6 +1,6 @@
 package org.aiknowledge.dto.response;
 
 public record CitationReference(
-        int chunkIndex
+        int source
 ) {
 }

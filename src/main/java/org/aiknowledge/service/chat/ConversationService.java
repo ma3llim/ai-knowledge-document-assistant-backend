@@ -33,12 +33,6 @@ public class ConversationService {
             return conversation.getId();
         }
 
-        long conversationCount = conversationRepository.countByUserIdAndDocumentId(userId, documentId);
-
-        if (conversationCount >= 3) {
-            throw new IllegalStateException("Maximum 3 conversations are allowed for this document");
-        }
-
         Conversation conversation = Conversation.builder()
                 .userId(userId)
                 .documentId(documentId)

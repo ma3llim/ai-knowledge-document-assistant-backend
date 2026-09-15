@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
 import org.aiknowledge.dto.response.ChatApiResponse;
 import org.aiknowledge.dto.response.ChatResponseDto;
+import org.aiknowledge.dto.response.CitationResponse;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
@@ -78,12 +79,16 @@ public class ChatService {
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
 
         ChatResponseDto llmResponse = generate(prompt);
+
         ChatResponseDto validatedResponse = chatResponseValidator.validate(llmResponse);
+
+        List<CitationResponse> citationResponses = citationService.resolve(validatedResponse.citations(), rerankedDocuments);
 
         Message assistantMessage = conversationService.saveAssistantMessage(conversationId, validatedResponse.answer());
         citationService.saveCitations(assistantMessage.getId(), rerankedDocuments);
 
         log.info("answer: {}", llmResponse);
+        log.info("citationResponses: {}", citationResponses);
         return null;
     }
 

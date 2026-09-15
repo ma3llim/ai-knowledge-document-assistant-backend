@@ -1,9 +1,9 @@
 package org.aiknowledge.service.chat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.dto.response.CitationReference;
+import org.aiknowledge.dto.response.CitationResponse;
 import org.aiknowledge.entity.MessageCitation;
 import org.aiknowledge.enums.SourceType;
 import org.aiknowledge.integration.rag.model.CitationMetadata;
@@ -21,7 +21,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CitationService {
     private final MessageCitationRepository messageCitationRepository;
-    private final ObjectMapper objectMapper;
 
     public void saveCitations(UUID messageId, List<Document> documents) {
         if (documents == null || documents.isEmpty()) {
@@ -72,13 +71,47 @@ public class CitationService {
         }
     }
 
-    private String convertToJson(CitationMetadata metadata) {
-        try {
-            return objectMapper.writeValueAsString(metadata);
-        } catch (JsonProcessingException exception) {
-            log.error("Failed to convert citation metadata to JSON", exception);
-            throw new IllegalStateException("Failed to serialize citation metadata", exception);
+    public List<CitationResponse> resolve(List<CitationReference> citations, List<Document> documents) {
+        if (citations == null || citations.isEmpty()) {
+            return List.of();
         }
+
+        if (documents == null || documents.isEmpty()) {
+            return List.of();
+        }
+
+        return citations.stream()
+                .map(CitationReference::source)
+                .distinct()
+                .filter(source -> source >= 1 && source <= documents.size())
+                .map(source -> documents.get(source - 1))
+                .map(this::toCitationResponse)
+                .filter(this::hasUsefulMetadata)
+                .toList();
+    }
+
+    private boolean hasUsefulMetadata(CitationResponse citation) {
+        return citation.fileName() != null
+                || citation.pageNumber() != null
+                || citation.sectionName() != null
+                || citation.sheetName() != null
+                || citation.slideNumber() != null;
+    }
+
+    private CitationResponse toCitationResponse(Document document) {
+
+        Map<String, Object> metadata = document.getMetadata();
+
+        log.info("Citation document id={}", document.getId());
+        log.info("Citation metadata={}", metadata);
+
+        return new CitationResponse(
+                getString(metadata, "file_name"),
+                getInteger(metadata, "page_number"),
+                getString(metadata, "section_name"),
+                getString(metadata, "sheet_name"),
+                getInteger(metadata, "slide_number")
+        );
     }
 
     private SourceType resolveSourceType(Object contentType) {

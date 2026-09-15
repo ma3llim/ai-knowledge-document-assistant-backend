@@ -7,7 +7,9 @@ import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class TikaReaderStrategy implements DocumentReaderStrategy {
@@ -18,6 +20,13 @@ public class TikaReaderStrategy implements DocumentReaderStrategy {
 
     @Override
     public List<Document> read(Resource resource) {
-        return new TikaDocumentReader(resource).get();
+        List<Document> documents = new TikaDocumentReader(resource).get();
+        return documents.stream().map(document -> {
+            Map<String, Object> metadata = new HashMap<>(document.getMetadata());
+
+            metadata.remove("source");
+
+            return new Document(document.getText(), metadata);
+        }).toList();
     }
 }
