@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ChatResponseValidator {
     public ChatResponseDto validate(ChatResponseDto response) {
-
         if (response == null) {
             throw new IllegalStateException("LLM returned a null response");
         }

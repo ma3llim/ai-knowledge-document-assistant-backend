@@ -11,10 +11,7 @@ import org.aiknowledge.repository.MessageCitationRepository;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -71,7 +68,7 @@ public class CitationService {
         }
     }
 
-    public List<CitationResponse> resolve(List<CitationReference> citations, List<Document> documents) {
+    public List<Document> resolve(List<CitationReference> citations, List<Document> documents) {
         if (citations == null || citations.isEmpty()) {
             return List.of();
         }
@@ -81,37 +78,12 @@ public class CitationService {
         }
 
         return citations.stream()
+                .filter(Objects::nonNull)
                 .map(CitationReference::source)
                 .distinct()
                 .filter(source -> source >= 1 && source <= documents.size())
                 .map(source -> documents.get(source - 1))
-                .map(this::toCitationResponse)
-                .filter(this::hasUsefulMetadata)
                 .toList();
-    }
-
-    private boolean hasUsefulMetadata(CitationResponse citation) {
-        return citation.fileName() != null
-                || citation.pageNumber() != null
-                || citation.sectionName() != null
-                || citation.sheetName() != null
-                || citation.slideNumber() != null;
-    }
-
-    private CitationResponse toCitationResponse(Document document) {
-
-        Map<String, Object> metadata = document.getMetadata();
-
-        log.info("Citation document id={}", document.getId());
-        log.info("Citation metadata={}", metadata);
-
-        return new CitationResponse(
-                getString(metadata, "file_name"),
-                getInteger(metadata, "page_number"),
-                getString(metadata, "section_name"),
-                getString(metadata, "sheet_name"),
-                getInteger(metadata, "slide_number")
-        );
     }
 
     private SourceType resolveSourceType(Object contentType) {
@@ -161,5 +133,36 @@ public class CitationService {
         } catch (IllegalArgumentException exception) {
             return null;
         }
+    }
+
+    public List<CitationResponse> toCitationResponses(List<Document> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return List.of();
+        }
+
+        return documents.stream()
+                .map(this::toCitationResponse)
+                .filter(this::hasUsefulMetadata)
+                .toList();
+    }
+
+    private CitationResponse toCitationResponse(Document document) {
+        Map<String, Object> metadata = document.getMetadata();
+
+        return new CitationResponse(
+                getString(metadata, "file_name"),
+                getInteger(metadata, "page_number"),
+                getString(metadata, "section_name"),
+                getString(metadata, "sheet_name"),
+                getInteger(metadata, "slide_number")
+        );
+    }
+
+    private boolean hasUsefulMetadata(CitationResponse citation) {
+        return citation.fileName() != null
+                || citation.pageNumber() != null
+                || citation.sectionName() != null
+                || citation.sheetName() != null
+                || citation.slideNumber() != null;
     }
 }

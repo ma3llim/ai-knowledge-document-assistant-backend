@@ -81,15 +81,14 @@ public class ChatService {
         ChatResponseDto llmResponse = generate(prompt);
 
         ChatResponseDto validatedResponse = chatResponseValidator.validate(llmResponse);
-
-        List<CitationResponse> citationResponses = citationService.resolve(validatedResponse.citations(), rerankedDocuments);
+        List<Document> citedDocuments = citationService.resolve(validatedResponse.citations(), rerankedDocuments);
 
         Message assistantMessage = conversationService.saveAssistantMessage(conversationId, validatedResponse.answer());
-        citationService.saveCitations(assistantMessage.getId(), rerankedDocuments);
+        citationService.saveCitations(assistantMessage.getId(), citedDocuments);
 
-        log.info("answer: {}", llmResponse);
-        log.info("citationResponses: {}", citationResponses);
-        return null;
+        List<CitationResponse> citationResponses = citationService.toCitationResponses(citedDocuments);
+
+        return new ChatApiResponse(validatedResponse.answer(), citationResponses);
     }
 
     public ChatResponseDto generate(Prompt prompt) {
