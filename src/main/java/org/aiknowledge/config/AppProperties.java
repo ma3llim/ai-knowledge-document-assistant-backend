@@ -84,11 +84,19 @@ public record AppProperties(
                 int minChunkCharacters,
                 int minChunkLengthToEmbed,
                 int maxChunkSize,
-                Retrieval retrieval
+                Retrieval retrieval,
+                Context context
         ) {
             public record Retrieval(
                     double similarityThreshold,
                     int topK
+            ) {
+            }
+
+            public record Context(
+                    int maxConversationTurns,
+                    int maxContextCharacters,
+                    int maxChunkCharacters
             ) {
             }
         }

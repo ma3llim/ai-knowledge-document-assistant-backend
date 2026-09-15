@@ -89,6 +89,11 @@ app:
         similarity-threshold: 0.70
         top-k: 5
 
+      context:
+        max-conversation-turns: 3
+        max-context-characters: 12000
+        max-chunk-characters: 4000
+
     reranking:
       top-k: 3
       jina:
@@ -101,6 +106,8 @@ app:
         api-key: ${JINA_API_KEY}
         base-url: https://api.jina.ai
         model: jina-embeddings-v3
+
+
 
     chat:
       cloudflare:

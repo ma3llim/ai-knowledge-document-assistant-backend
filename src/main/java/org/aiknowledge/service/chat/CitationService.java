@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.entity.MessageCitation;
 import org.aiknowledge.enums.SourceType;
-import org.aiknowledge.integration.rag.CitationMetadata;
+import org.aiknowledge.integration.rag.model.CitationMetadata;
 import org.aiknowledge.repository.MessageCitationRepository;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package org.aiknowledge.integration.rag;
+package org.aiknowledge.integration.rag.model;
 
 public record CitationMetadata(
         String fileName,

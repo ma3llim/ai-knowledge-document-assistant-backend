@@ -9,6 +9,7 @@ import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.rag.DocumentContextBuilder;
 import org.aiknowledge.integration.rag.DocumentRerankingService;
 import org.aiknowledge.integration.rag.DocumentRetrievalService;
+import org.aiknowledge.integration.rag.model.RagContext;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.chat.ChatPromptBuilder;
@@ -67,8 +68,10 @@ public class ChatService {
         List<Document> rerankedDocuments = documentRerankingService.rerank(userQuery, documentList);
         // Previous 3 conversation turns
         List<Message> conversationHistory = conversationService.getRecentHistory(conversationId);
-        // Documents + history
-        String context = contextBuilder.build(rerankedDocuments, conversationHistory);
+        // Rag Context With Chat History + Chunks
+        RagContext ragContext = new RagContext(userQuery, conversationHistory, rerankedDocuments);
+        // Context
+        String context = contextBuilder.build(ragContext);
         // Prompt
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
         // LLM call

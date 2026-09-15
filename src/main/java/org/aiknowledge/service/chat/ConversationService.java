@@ -1,6 +1,7 @@
 package org.aiknowledge.service.chat;
 
 import lombok.RequiredArgsConstructor;
+import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.config.Constants;
 import org.aiknowledge.entity.Conversation;
 import org.aiknowledge.entity.Message;
@@ -9,6 +10,7 @@ import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.repository.ConversationRepository;
 import org.aiknowledge.repository.MessageRepository;
 import org.aiknowledge.service.DocumentService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ public class ConversationService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final DocumentService documentService;
+    private final AppProperties appProperties;
 
     public UUID getOrCreateConversation(UUID userId, UUID documentId, UUID conversationId) {
         if (conversationId != null) {
@@ -72,7 +75,10 @@ public class ConversationService {
     }
 
     public List<Message> getRecentHistory(UUID conversationId) {
-        List<Message> messages = messageRepository.findTop6ByConversationIdOrderByCreatedAtDesc(conversationId);
+        int maxTurns = appProperties.ai().rag().context().maxConversationTurns();
+        int maxMessages = maxTurns * 2;
+
+        List<Message> messages = messageRepository.findRecentMessages(conversationId, PageRequest.of(0, maxMessages));
 
         if (messages.isEmpty()) {
             return List.of();
