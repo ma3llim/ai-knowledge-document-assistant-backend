@@ -3,6 +3,7 @@ package org.aiknowledge.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
+import org.aiknowledge.dto.response.ChatApiResponse;
 import org.aiknowledge.dto.response.ChatResponseDto;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.entity.User;
@@ -16,6 +17,7 @@ import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.chat.ChatPromptBuilder;
 import org.aiknowledge.service.chat.CitationService;
 import org.aiknowledge.service.chat.ConversationService;
+import org.aiknowledge.validation.ChatResponseValidator;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
@@ -38,8 +40,9 @@ public class ChatService {
     private final ChatClient chatClient;
     private final ChatPromptBuilder chatPromptBuilder;
     private final CitationService citationService;
+    private final ChatResponseValidator chatResponseValidator;
 
-    public void processQuestion(ChatQuestionRequest questionRequest) {
+    public ChatApiResponse processQuestion(ChatQuestionRequest questionRequest) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
             log.warn("Authenticated user could not be resolved");
             return new ResourceNotFoundException("Authenticated user not found");
@@ -62,24 +65,26 @@ public class ChatService {
                 .userQuery(userQuery)
                 .build();
 
-        // Top 5
         List<Document> documentList = documentRetrievalService.retrieve(request);
-        // Top 3
-        List<Document> rerankedDocuments = documentRerankingService.rerank(userQuery, documentList);
-        // Previous 3 conversation turns
-        List<Message> conversationHistory = conversationService.getRecentHistory(conversationId);
-        // Rag Context With Chat History + Chunks
-        RagContext ragContext = new RagContext(userQuery, conversationHistory, rerankedDocuments);
-        // Context
-        String context = contextBuilder.build(ragContext);
-        // Prompt
-        Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
-        // LLM call
-        ChatResponseDto answer = generate(prompt);
-        log.info("answer: {}", answer);
-        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, answer.answer());
 
+        List<Document> rerankedDocuments = documentRerankingService.rerank(userQuery, documentList);
+
+        List<Message> conversationHistory = conversationService.getRecentHistory(conversationId);
+
+        RagContext ragContext = new RagContext(userQuery, conversationHistory, rerankedDocuments);
+
+        String context = contextBuilder.build(ragContext);
+
+        Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
+
+        ChatResponseDto llmResponse = generate(prompt);
+        ChatResponseDto validatedResponse = chatResponseValidator.validate(llmResponse);
+
+        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, validatedResponse.answer());
         citationService.saveCitations(assistantMessage.getId(), rerankedDocuments);
+
+        log.info("answer: {}", llmResponse);
+        return null;
     }
 
     public ChatResponseDto generate(Prompt prompt) {
