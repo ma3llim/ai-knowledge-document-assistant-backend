@@ -3,6 +3,7 @@ package org.aiknowledge.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
+import org.aiknowledge.dto.response.ChatResponseDto;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
@@ -16,7 +17,6 @@ import org.aiknowledge.service.chat.ChatPromptBuilder;
 import org.aiknowledge.service.chat.CitationService;
 import org.aiknowledge.service.chat.ConversationService;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
@@ -75,27 +75,18 @@ public class ChatService {
         // Prompt
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
         // LLM call
-        String answer = generate(prompt);
+        ChatResponseDto answer = generate(prompt);
         log.info("answer: {}", answer);
         Message assistantMessage = conversationService.saveAssistantMessage(conversationId, answer);
 
         citationService.saveCitations(assistantMessage.getId(), rerankedDocuments);
-//        return new ChatResponse(conversationId, answer);
     }
 
-    public String generate(Prompt prompt) {
-        ChatResponse response = chatClient
+    public ChatResponseDto generate(Prompt prompt) {
+        return chatClient
                 .prompt(prompt)
                 .call()
-                .chatResponse();
-
-        if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
-            throw new IllegalStateException("LLM returned an empty response");
-        }
-
-        return response.getResult()
-                .getOutput()
-                .getText();
+                .entity(ChatResponseDto.class);
     }
 
     private String normalizeQuery(String query) {
