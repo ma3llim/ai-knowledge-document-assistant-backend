@@ -12,6 +12,8 @@ import org.aiknowledge.integration.rag.DocumentRetrievalService;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.chat.ChatPromptBuilder;
+import org.aiknowledge.service.chat.CitationService;
+import org.aiknowledge.service.chat.ConversationService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -34,6 +36,7 @@ public class ChatService {
     private final ConversationService conversationService;
     private final ChatClient chatClient;
     private final ChatPromptBuilder chatPromptBuilder;
+    private final CitationService citationService;
 
     public void processQuestion(ChatQuestionRequest questionRequest) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
@@ -71,8 +74,9 @@ public class ChatService {
         // LLM call
         String answer = generate(prompt);
         log.info("answer: {}", answer);
-        conversationService.saveAssistantMessage(conversationId, answer);
+        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, answer);
 
+        citationService.saveCitations(assistantMessage.getId(), rerankedDocuments);
 //        return new ChatResponse(conversationId, answer);
     }
 

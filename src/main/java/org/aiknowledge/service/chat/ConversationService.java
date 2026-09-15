@@ -1,4 +1,4 @@
-package org.aiknowledge.service;
+package org.aiknowledge.service.chat;
 
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.config.Constants;
@@ -8,6 +8,7 @@ import org.aiknowledge.enums.MessageRole;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.repository.ConversationRepository;
 import org.aiknowledge.repository.MessageRepository;
+import org.aiknowledge.service.DocumentService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -56,14 +57,14 @@ public class ConversationService {
         messageRepository.save(message);
     }
 
-    public void saveAssistantMessage(UUID conversationId, String content) {
+    public Message saveAssistantMessage(UUID conversationId, String content) {
         Message message = Message.builder()
                 .conversationId(conversationId)
                 .role(MessageRole.ASSISTANT)
                 .content(content)
                 .build();
 
-        messageRepository.save(message);
+        return messageRepository.save(message);
     }
 
     public List<Message> getMessages(UUID conversationId) {
