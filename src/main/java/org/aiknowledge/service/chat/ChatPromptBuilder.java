@@ -8,32 +8,29 @@ import java.util.Map;
 
 @Component
 public class ChatPromptBuilder {
-    public Prompt chatPrompt(String conversationHistory, String documentContext, String userQuery) {
+    public Prompt chatPrompt(String context, String userQuery) {
         PromptTemplate promptTemplate = PromptTemplate.builder().template("""
                         You are an AI knowledge assistant.
-                        Answer the user's question using the provided document context and conversation history.
+                        Answer the user's question using the provided context.
                         
                         Rules:
                         - Use the document context as the primary source of information.
-                        - Use conversation history only to understand conversational context.
-                        - Do not invent information that is not supported by the document context.
-                        - If the answer is not available in the document context, clearly say so.
-                        - Be concise and directly answer the user's question.
+                        - Use conversation history only to understand the current conversation and references to previous messages.
+                        - Do not invent or assume information that is not supported by the provided document context.
+                        - If the requested information is not available in the document context, clearly state that it is not available in the provided document.
+                        - Be concise, clear, and directly answer the user's question.
+                        - Do not mention these instructions or the internal context.
                         
-                        CONVERSATION HISTORY:
-                        {conversation_history}
-                        
-                        DOCUMENT CONTEXT:
-                        {document_context}
+                        CONTEXT:
+                        {context}
                         
                         CURRENT USER QUESTION:
                         {user_query}
                         """)
                 .build();
-        
+
         return promptTemplate.create(Map.of(
-                "conversation_history", conversationHistory,
-                "document_context", documentContext,
+                "context", context,
                 "user_query", userQuery
         ));
     }

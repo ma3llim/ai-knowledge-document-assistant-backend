@@ -36,6 +36,7 @@ public class DocumentContextBuilder {
 
     private void appendDocumentContext(StringBuilder context, List<Document> documents) {
         if (documents == null || documents.isEmpty()) {
+            log.debug("No documents available for context building");
             return;
         }
 
@@ -46,7 +47,6 @@ public class DocumentContextBuilder {
 
         for (int i = 0; i < documents.size(); i++) {
             Document document = documents.get(i);
-
             context.append("--- Chunk ").append(i + 1).append(" ---\n");
             context.append(document.getText()).append("\n\n");
         }

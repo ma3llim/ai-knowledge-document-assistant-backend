@@ -11,8 +11,10 @@ import org.aiknowledge.integration.rag.DocumentRerankingService;
 import org.aiknowledge.integration.rag.DocumentRetrievalService;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.SecurityUserService;
+import org.aiknowledge.service.chat.ChatPromptBuilder;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ public class ChatService {
     private final DocumentContextBuilder contextBuilder;
     private final ConversationService conversationService;
     private final ChatClient chatClient;
+    private final ChatPromptBuilder chatPromptBuilder;
 
     public void processQuestion(ChatQuestionRequest questionRequest) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
@@ -46,7 +49,6 @@ public class ChatService {
         String userQuery = normalizeQuery(questionRequest.userQuery());
 
         UUID conversationId = conversationService.getOrCreateConversation(user.getId(), questionRequest.documentId(), questionRequest.conversationId());
-
         conversationService.saveUserMessage(conversationId, userQuery);
 
         ChatQuestionRequest request = ChatQuestionRequest.builder()
@@ -64,13 +66,19 @@ public class ChatService {
         List<Message> conversationHistory = conversationService.getRecentHistory(conversationId);
         // Documents + history
         String context = contextBuilder.build(rerankedDocuments, conversationHistory);
+        // Prompt
+        Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
+        // LLM call
+        String answer = generate(prompt);
+        log.info("answer: {}", answer);
+        conversationService.saveAssistantMessage(conversationId, answer);
 
+//        return new ChatResponse(conversationId, answer);
     }
 
-    public String generate(List<org.springframework.ai.chat.messages.Message> messages) {
+    public String generate(Prompt prompt) {
         ChatResponse response = chatClient
-                .prompt()
-                .messages(messages)
+                .prompt(prompt)
                 .call()
                 .chatResponse();
 
