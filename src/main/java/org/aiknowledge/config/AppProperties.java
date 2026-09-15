@@ -58,8 +58,7 @@ public record AppProperties(
             Processing processing,
             Embedding embedding,
             Rag rag,
-            QuerySpecifier querySpecifier,
-            Summarization summarization
+            Chat chat
     ) {
 
         public record Processing(
@@ -84,22 +83,28 @@ public record AppProperties(
                 int minChunkCharacters,
                 int minChunkLengthToEmbed,
                 int maxChunkSize,
-                Retrieval retrieval
+                Retrieval retrieval,
+                Reranking reranking
         ) {
             public record Retrieval(
                     double similarityThreshold,
                     int topK
             ) {
             }
+
+            public record Reranking(int topK) {
+            }
         }
 
-        public record QuerySpecifier(
+        public record Chat(
                 Cloudflare cloudflare
         ) {
             public record Cloudflare(
                     String apiKey,
                     String baseUrl,
-                    String model
+                    String model,
+                    double temperature,
+                    int maxTokens
             ) {
             }
         }
