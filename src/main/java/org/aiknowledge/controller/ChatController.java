@@ -3,6 +3,7 @@ package org.aiknowledge.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
+import org.aiknowledge.dto.response.ChatApiResponse;
 import org.aiknowledge.service.ChatService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,7 +17,7 @@ public class ChatController {
     private final ChatService chatService;
 
     @GetMapping
-    public void askQuestion(@Valid @RequestBody ChatQuestionRequest chatQuestionRequest) {
-        chatService.processQuestion(chatQuestionRequest);
+    public ChatApiResponse askQuestion(@Valid @RequestBody ChatQuestionRequest chatQuestionRequest) {
+        return chatService.processQuestion(chatQuestionRequest);
     }
 }

@@ -77,7 +77,7 @@ public class ChatService {
         // LLM call
         ChatResponseDto answer = generate(prompt);
         log.info("answer: {}", answer);
-        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, answer);
+        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, answer.answer());
 
         citationService.saveCitations(assistantMessage.getId(), rerankedDocuments);
     }
