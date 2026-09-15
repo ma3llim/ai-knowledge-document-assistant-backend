@@ -15,6 +15,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     Optional<Document> findByIdAndUserId(UUID id, UUID userId);
 
+    long countByUserId(UUID userId);
+
     @Query("""
             SELECT d.originalFilename FROM Document d WHERE d.id = :documentId AND d.userId = :userId
             """)

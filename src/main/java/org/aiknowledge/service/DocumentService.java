@@ -11,6 +11,7 @@ import org.aiknowledge.entity.DocumentProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
 import org.aiknowledge.enums.DocumentType;
 import org.aiknowledge.enums.ProcessingStatus;
+import org.aiknowledge.exception.BadRequestException;
 import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.sqs.event.DocumentProcessingEvent;
@@ -42,6 +43,12 @@ public class DocumentService {
 
     @Transactional
     public DocumentResponse upload(UUID userId, MultipartFile file) {
+        long documentCount = documentRepository.countByUserId(userId);
+
+        if (documentCount >= 3) {
+            throw new BadRequestException("Maximum 3 documents are allowed");
+        }
+
         DocumentType documentType = documentFileValidator.validate(file);
 
         String originalFilename = file.getOriginalFilename();
