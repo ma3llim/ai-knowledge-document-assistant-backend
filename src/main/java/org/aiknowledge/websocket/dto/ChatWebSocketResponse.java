@@ -1,4 +1,4 @@
-package org.aiknowledge.dto.response;
+package org.aiknowledge.websocket.dto;
 
 import org.aiknowledge.enums.ChatWebSocketEventType;
 

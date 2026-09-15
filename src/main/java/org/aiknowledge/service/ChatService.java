@@ -3,9 +3,6 @@ package org.aiknowledge.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
-import org.aiknowledge.dto.response.ChatApiResponse;
-import org.aiknowledge.dto.response.ChatResponseDto;
-import org.aiknowledge.dto.response.CitationResponse;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.exception.ResourceNotFoundException;
@@ -16,13 +13,13 @@ import org.aiknowledge.integration.rag.model.RagContext;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.chat.ChatPromptBuilder;
-import org.aiknowledge.service.chat.CitationService;
 import org.aiknowledge.service.chat.ConversationService;
-import org.aiknowledge.validation.ChatResponseValidator;
+import org.aiknowledge.websocket.dto.PreparedChat;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,10 +37,14 @@ public class ChatService {
     private final ConversationService conversationService;
     private final ChatClient chatClient;
     private final ChatPromptBuilder chatPromptBuilder;
-    private final CitationService citationService;
-    private final ChatResponseValidator chatResponseValidator;
 
-    public ChatApiResponse processQuestion(ChatQuestionRequest questionRequest) {
+    public Flux<String> processQuestion(ChatQuestionRequest questionRequest) {
+        PreparedChat preparedChat = prepareChat(questionRequest);
+
+        return generateStream(preparedChat.prompt());
+    }
+
+    private PreparedChat prepareChat(ChatQuestionRequest questionRequest) {
         User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
             log.warn("Authenticated user could not be resolved");
             return new ResourceNotFoundException("Authenticated user not found");
@@ -56,7 +57,9 @@ public class ChatService {
 
         String userQuery = normalizeQuery(questionRequest.userQuery());
 
-        UUID conversationId = conversationService.getOrCreateConversation(user.getId(), questionRequest.documentId(), questionRequest.conversationId());
+        UUID conversationId = conversationService.getOrCreateConversation(user.getId(),
+                questionRequest.documentId(), questionRequest.conversationId());
+
         conversationService.saveUserMessage(conversationId, userQuery);
 
         ChatQuestionRequest request = ChatQuestionRequest.builder()
@@ -78,24 +81,27 @@ public class ChatService {
 
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
 
-        ChatResponseDto llmResponse = generate(prompt);
+        return new PreparedChat(conversationId, prompt, rerankedDocuments);
 
-        ChatResponseDto validatedResponse = chatResponseValidator.validate(llmResponse);
-        List<Document> citedDocuments = citationService.resolve(validatedResponse.citations(), rerankedDocuments);
-
-        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, validatedResponse.answer());
-        citationService.saveCitations(assistantMessage.getId(), citedDocuments);
-
-        List<CitationResponse> citationResponses = citationService.toCitationResponses(citedDocuments);
-
-        return new ChatApiResponse(validatedResponse.answer(), citationResponses);
+//        ChatResponseDto validatedResponse = chatResponseValidator.validate(llmResponse);
+//        List<Document> citedDocuments = citationService.resolve(validatedResponse.citations(), rerankedDocuments);
+//
+//        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, validatedResponse.answer());
+//        citationService.saveCitations(assistantMessage.getId(), citedDocuments);
+//
+//        List<CitationResponse> citationResponses = citationService.toCitationResponses(citedDocuments);
+//
+////            return new ChatApiResponse(validatedResponse.answer(), citationResponses);
+//        return null;
     }
 
-    public ChatResponseDto generate(Prompt prompt) {
+    public Flux<String> generateStream(Prompt prompt) {
         return chatClient
                 .prompt(prompt)
-                .call()
-                .entity(ChatResponseDto.class);
+                .stream()
+                .content()
+                .doOnNext(chunk -> log.debug("LLM stream chunk received: {}", chunk))
+                .doOnError(exception -> log.error("LLM streaming failed", exception));
     }
 
     private String normalizeQuery(String query) {
