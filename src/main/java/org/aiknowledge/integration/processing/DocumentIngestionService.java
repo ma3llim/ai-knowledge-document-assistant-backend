@@ -78,12 +78,19 @@ public class DocumentIngestionService {
                 org.springframework.ai.document.Document chunk = chunks.get(chunkIndex);
 
                 Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+                metadata.put("user_id", document.getUserId().toString());
                 metadata.put("document_id", document.getId().toString());
                 metadata.put("file_name", document.getOriginalFilename());
                 metadata.put("content_type", document.getFileType());
                 metadata.put("chunk_index", chunkIndex);
 
                 addSourceMetadata(metadata, chunk);
+
+                String text = chunk.getText();
+                if (text == null || text.isBlank()) {
+                    log.debug("Skipping empty chunk. documentId={}, chunkIndex={}", document.getId(), chunkIndex);
+                    continue;
+                }
 
                 enrichedChunks.add(new org.springframework.ai.document.Document(chunk.getText(), metadata));
             }
