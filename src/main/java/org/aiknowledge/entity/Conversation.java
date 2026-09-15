@@ -25,6 +25,9 @@ public class Conversation {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "document_id", nullable = false)
+    private UUID documentId;
+
     private String title;
 
     @CreatedDate

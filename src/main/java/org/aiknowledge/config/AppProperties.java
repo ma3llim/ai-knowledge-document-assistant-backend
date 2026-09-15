@@ -58,7 +58,8 @@ public record AppProperties(
             Processing processing,
             Embedding embedding,
             Rag rag,
-            Chat chat
+            Chat chat,
+            Reranking reranking
     ) {
 
         public record Processing(
@@ -83,16 +84,12 @@ public record AppProperties(
                 int minChunkCharacters,
                 int minChunkLengthToEmbed,
                 int maxChunkSize,
-                Retrieval retrieval,
-                Reranking reranking
+                Retrieval retrieval
         ) {
             public record Retrieval(
                     double similarityThreshold,
                     int topK
             ) {
-            }
-
-            public record Reranking(int topK) {
             }
         }
 
@@ -109,13 +106,16 @@ public record AppProperties(
             }
         }
 
-        public record Summarization(
-                String apiKey,
-                String baseUrl,
-                String model,
-                double temperature,
-                int maxTokens
+        public record Reranking(
+                int topK,
+                Jina jina
         ) {
+            public record Jina(
+                    String apiKey,
+                    String baseUrl,
+                    String model
+            ) {
+            }
         }
     }
 }

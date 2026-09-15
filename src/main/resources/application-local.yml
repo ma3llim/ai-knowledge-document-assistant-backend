@@ -88,8 +88,13 @@ app:
       retrieval:
         similarity-threshold: 0.70
         top-k: 5
-      reranking:
-        top-k: 3
+
+    reranking:
+      top-k: 3
+      jina:
+        api-key: ${JINA_API_KEY}
+        base-url: https://api.jina.ai
+        model: jina-reranker-v3.5
 
     embedding:
       jina:

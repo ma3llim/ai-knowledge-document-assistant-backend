@@ -150,6 +150,13 @@ public class DocumentService {
         }
     }
 
+    public String getDocumentFileName(UUID userId, UUID documentId) {
+        return documentRepository.findFileNameByIdAndUserId(documentId, userId).orElseThrow(() -> {
+            log.warn("Fetch document file name failed. documentId={}, userId={}", documentId, userId);
+            return new ResourceNotFoundException("Document not found");
+        });
+    }
+
     private String buildObjectKey(UUID userId, UUID documentId, String filename) {
         return "users/" + userId + "/documents/" + documentId + "/" + filename;
     }

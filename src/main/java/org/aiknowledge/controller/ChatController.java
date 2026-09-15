@@ -17,6 +17,6 @@ public class ChatController {
 
     @GetMapping
     public void askQuestion(@Valid @RequestBody ChatQuestionRequest chatQuestionRequest) {
-        chatService.processQuestion(chatQuestionRequest.documentId(), chatQuestionRequest.userQuery());
+        chatService.processQuestion(chatQuestionRequest);
     }
 }
