@@ -11,6 +11,7 @@ import org.aiknowledge.integration.rag.DocumentRerankingService;
 import org.aiknowledge.integration.rag.DocumentRetrievalService;
 import org.aiknowledge.integration.rag.model.RagContext;
 import org.aiknowledge.repository.UserRepository;
+import org.aiknowledge.service.chat.ChatGuardrailService;
 import org.aiknowledge.service.chat.ChatPromptBuilder;
 import org.aiknowledge.service.chat.ConversationService;
 import org.aiknowledge.websocket.dto.ConversationResult;
@@ -35,6 +36,7 @@ public class ChatService {
     private final ConversationService conversationService;
     private final ChatClient chatClient;
     private final ChatPromptBuilder chatPromptBuilder;
+    private final ChatGuardrailService chatGuardrailService;
 
     public Flux<String> processQuestion(ChatQuestionRequest questionRequest) {
         PreparedChat preparedChat = prepareChat(questionRequest);
@@ -54,6 +56,8 @@ public class ChatService {
         }
 
         String userQuery = normalizeQuery(questionRequest.userQuery());
+
+        chatGuardrailService.validateInput(userQuery);
 
         ConversationResult conversationResult = conversationService.getOrCreateConversation(user.getId(),
                 questionRequest.documentId(), questionRequest.conversationId());
