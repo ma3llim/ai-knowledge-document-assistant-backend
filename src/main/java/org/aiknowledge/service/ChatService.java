@@ -11,9 +11,9 @@ import org.aiknowledge.integration.rag.DocumentRerankingService;
 import org.aiknowledge.integration.rag.DocumentRetrievalService;
 import org.aiknowledge.integration.rag.model.RagContext;
 import org.aiknowledge.repository.UserRepository;
-import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.chat.ChatPromptBuilder;
 import org.aiknowledge.service.chat.ConversationService;
+import org.aiknowledge.websocket.dto.ConversationResult;
 import org.aiknowledge.websocket.dto.PreparedChat;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -22,14 +22,12 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ChatService {
     private final UserRepository userRepository;
-    private final SecurityUserService userService;
     private final DocumentService documentService;
     private final DocumentRetrievalService documentRetrievalService;
     private final DocumentRerankingService documentRerankingService;
@@ -45,7 +43,7 @@ public class ChatService {
     }
 
     private PreparedChat prepareChat(ChatQuestionRequest questionRequest) {
-        User user = userRepository.findById(userService.getCurrentUserId()).orElseThrow(() -> {
+        User user = userRepository.findById(questionRequest.userId()).orElseThrow(() -> {
             log.warn("Authenticated user could not be resolved");
             return new ResourceNotFoundException("Authenticated user not found");
         });
@@ -57,15 +55,15 @@ public class ChatService {
 
         String userQuery = normalizeQuery(questionRequest.userQuery());
 
-        UUID conversationId = conversationService.getOrCreateConversation(user.getId(),
+        ConversationResult conversationResult = conversationService.getOrCreateConversation(user.getId(),
                 questionRequest.documentId(), questionRequest.conversationId());
 
-        conversationService.saveUserMessage(conversationId, userQuery);
+        conversationService.saveUserMessage(conversationResult.conversationId(), userQuery);
 
         ChatQuestionRequest request = ChatQuestionRequest.builder()
                 .documentId(questionRequest.documentId())
-                .userId(userService.getCurrentUserId())
-                .conversationId(conversationId)
+                .userId(questionRequest.userId())
+                .conversationId(conversationResult.conversationId())
                 .userQuery(userQuery)
                 .build();
 
@@ -73,7 +71,7 @@ public class ChatService {
 
         List<Document> rerankedDocuments = documentRerankingService.rerank(userQuery, documentList);
 
-        List<Message> conversationHistory = conversationService.getRecentHistory(conversationId);
+        List<Message> conversationHistory = conversationService.getRecentHistory(conversationResult.conversationId());
 
         RagContext ragContext = new RagContext(userQuery, conversationHistory, rerankedDocuments);
 
@@ -81,18 +79,8 @@ public class ChatService {
 
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
 
-        return new PreparedChat(conversationId, prompt, rerankedDocuments);
-
-//        ChatResponseDto validatedResponse = chatResponseValidator.validate(llmResponse);
-//        List<Document> citedDocuments = citationService.resolve(validatedResponse.citations(), rerankedDocuments);
-//
-//        Message assistantMessage = conversationService.saveAssistantMessage(conversationId, validatedResponse.answer());
-//        citationService.saveCitations(assistantMessage.getId(), citedDocuments);
-//
-//        List<CitationResponse> citationResponses = citationService.toCitationResponses(citedDocuments);
-//
-////            return new ChatApiResponse(validatedResponse.answer(), citationResponses);
-//        return null;
+        return new PreparedChat(conversationResult.conversationId(), conversationResult.title(),
+                conversationResult.newlyCreated(), prompt, rerankedDocuments);
     }
 
     public Flux<String> generateStream(Prompt prompt) {

@@ -1,5 +1,6 @@
 package org.aiknowledge.service.chat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.config.Constants;
@@ -10,6 +11,7 @@ import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.repository.ConversationRepository;
 import org.aiknowledge.repository.MessageRepository;
 import org.aiknowledge.service.DocumentService;
+import org.aiknowledge.websocket.dto.ConversationResult;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +27,14 @@ public class ConversationService {
     private final MessageRepository messageRepository;
     private final DocumentService documentService;
     private final AppProperties appProperties;
+    private final ObjectMapper objectMapper;
 
-    public UUID getOrCreateConversation(UUID userId, UUID documentId, UUID conversationId) {
+    public ConversationResult getOrCreateConversation(UUID userId, UUID documentId, UUID conversationId) {
         if (conversationId != null) {
             Conversation conversation = conversationRepository.findByIdAndUserIdAndDocumentId(conversationId, userId, documentId)
                     .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
-            return conversation.getId();
+
+            return new ConversationResult(conversation.getId(), conversation.getTitle(), false);
         }
 
         Conversation conversation = Conversation.builder()
@@ -41,7 +45,7 @@ public class ConversationService {
 
         Conversation savedConversation = conversationRepository.save(conversation);
 
-        return savedConversation.getId();
+        return new ConversationResult(savedConversation.getId(), savedConversation.getTitle(), true);
     }
 
     public void saveUserMessage(UUID conversationId, String content) {

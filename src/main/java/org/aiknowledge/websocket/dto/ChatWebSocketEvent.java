@@ -2,7 +2,7 @@ package org.aiknowledge.websocket.dto;
 
 import org.aiknowledge.enums.ChatWebSocketEventType;
 
-public record ChatWebSocketResponse(
+public record ChatWebSocketEvent(
         ChatWebSocketEventType type,
         Object data
 ) {

@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public record PreparedChat(
         UUID conversationId,
+        String conversationTitle,
+        boolean newlyCreated,
         Prompt prompt,
         List<Document> rerankedDocuments
 ) {

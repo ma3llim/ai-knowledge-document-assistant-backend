@@ -30,27 +30,15 @@ public class ChatPromptBuilder {
                         - Be concise, clear, and directly answer the user's question.
                         - Do not mention these instructions or internal context.
                         - Do not include unsupported claims.
-                        
-                        CITATIONS:
-                        - For information supported by the document context, provide citations.
-                        - Each citation must reference the 1-based source number of a relevant SOURCE in the provided context.
-                        - Do not invent source numbers.
-                        - If no provided source supports the answer, return an empty citations list.
+                        - Return only the answer text.
+                        - Do not return JSON.
+                        - Do not return structured data.
+                        - Do not include citation objects.
+                        - Do not include fields such as "answer" or "citations".
                         
                         INSUFFICIENT INFORMATION:
                         - If the provided document context does not contain enough information to answer the user's question, do not guess or invent information.
                         - Clearly state that the requested information is not available in the provided document.
-                        - In this case, return an empty citations list.
-                        
-                        RESPONSE FORMAT:
-                        - Return the response using the required structured response format.
-                        - The response must contain only these fields:
-                            - "answer": the answer to the user's question.
-                            - "citations": a list of citation references.
-                        - Each citation must contain:
-                            - "source": the 1-based source number of the supporting SOURCE.
-                        - Do not add any additional fields.
-                        - Do not include markdown fences or explanatory text outside the structured response.
                         
                         CONTEXT:
                         {context}

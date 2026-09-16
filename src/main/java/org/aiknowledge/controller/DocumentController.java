@@ -1,6 +1,8 @@
 package org.aiknowledge.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.aiknowledge.dto.ApiSuccessResponse;
 import org.aiknowledge.dto.PageResponse;
 import org.aiknowledge.dto.response.documents.DocumentResponse;
 import org.aiknowledge.dto.response.documents.DocumentSummaryResponse;
@@ -40,10 +42,19 @@ public class DocumentController {
     }
 
     @GetMapping("/{documentId}")
-    public ResponseEntity<DocumentResponse> getDocument(@PathVariable UUID documentId) {
+    public ResponseEntity<ApiSuccessResponse<DocumentResponse>> getDocument(
+            @PathVariable UUID documentId, HttpServletRequest request
+    ) {
         UUID userId = securityUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(documentService.getDocument(userId, documentId));
+        DocumentResponse response = documentService.getDocument(userId, documentId);
+
+        return ResponseEntity.ok(ApiSuccessResponse.<DocumentResponse>builder()
+                .success(true)
+                .message("Document fetch successfully")
+                .data(response)
+                .path(request.getRequestURI())
+                .build());
     }
 
     @DeleteMapping("/{documentId}")
