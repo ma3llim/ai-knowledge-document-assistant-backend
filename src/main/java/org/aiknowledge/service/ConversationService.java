@@ -1,18 +1,21 @@
-package org.aiknowledge.service.chat;
+package org.aiknowledge.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.config.Constants;
+import org.aiknowledge.dto.PageResponse;
+import org.aiknowledge.dto.response.ConversationResponse;
 import org.aiknowledge.entity.Conversation;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.enums.MessageRole;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.repository.ConversationRepository;
 import org.aiknowledge.repository.MessageRepository;
-import org.aiknowledge.service.DocumentService;
 import org.aiknowledge.websocket.dto.ConversationResult;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -58,14 +61,33 @@ public class ConversationService {
         messageRepository.save(message);
     }
 
-    public Message saveAssistantMessage(UUID conversationId, String content) {
+    public void saveAssistantMessage(UUID conversationId, String content) {
         Message message = Message.builder()
                 .conversationId(conversationId)
                 .role(MessageRole.ASSISTANT)
                 .content(content)
                 .build();
 
-        return messageRepository.save(message);
+        messageRepository.save(message);
+    }
+
+    public PageResponse<ConversationResponse> allConversations(UUID userId, Pageable pageable) {
+        Page<Conversation> conversations = conversationRepository.findByUserIdOrderByUpdatedAtDesc(userId, pageable);
+
+        List<ConversationResponse> content = conversations.getContent()
+                .stream()
+                .map(conversation -> objectMapper.convertValue(conversation, ConversationResponse.class))
+                .toList();
+
+        return PageResponse.<ConversationResponse>builder()
+                .content(content)
+                .page(conversations.getNumber())
+                .size(conversations.getSize())
+                .totalElements(conversations.getTotalElements())
+                .totalPages(conversations.getTotalPages())
+                .first(conversations.isFirst())
+                .last(conversations.isLast())
+                .build();
     }
 
     public List<Message> getMessages(UUID conversationId) {

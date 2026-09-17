@@ -14,7 +14,6 @@ import org.aiknowledge.integration.rag.DocumentRerankingService;
 import org.aiknowledge.integration.rag.DocumentRetrievalService;
 import org.aiknowledge.integration.rag.model.RagContext;
 import org.aiknowledge.repository.UserRepository;
-import org.aiknowledge.service.chat.ConversationService;
 import org.aiknowledge.websocket.dto.ConversationResult;
 import org.aiknowledge.websocket.dto.PreparedChat;
 import org.springframework.ai.chat.client.ChatClient;

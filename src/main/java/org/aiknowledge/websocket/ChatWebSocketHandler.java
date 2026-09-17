@@ -8,7 +8,7 @@ import org.aiknowledge.dto.request.ChatQuestionRequest;
 import org.aiknowledge.dto.response.ChatStartData;
 import org.aiknowledge.enums.ChatWebSocketEventType;
 import org.aiknowledge.service.ChatService;
-import org.aiknowledge.service.chat.ConversationService;
+import org.aiknowledge.service.ConversationService;
 import org.aiknowledge.validation.ChatResponseValidator;
 import org.aiknowledge.websocket.dto.ChatWebSocketError;
 import org.aiknowledge.websocket.dto.ChatWebSocketEvent;
