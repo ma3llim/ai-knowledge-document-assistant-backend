@@ -11,10 +11,6 @@ public record GuardrailResult(boolean allowed, String message) {
         return new GuardrailResult(false, Constants.INPUT_REJECTED);
     }
 
-    public static GuardrailResult outputRejected() {
-        return new GuardrailResult(false, Constants.OUTPUT_REJECTED);
-    }
-
     public static GuardrailResult invalidResponse() {
         return new GuardrailResult(false, Constants.INVALID_GUARDRAIL_RESPONSE);
     }

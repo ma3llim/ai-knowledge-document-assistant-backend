@@ -38,27 +38,4 @@ public class ChatGuardrailService {
 
         return GuardrailResult.invalidResponse();
     }
-
-    public GuardrailResult validateOutput(String outputChunk) {
-        String prompt = ChatPrompt.build(outputChunk);
-
-        String response = guardrailChatModel
-                .prompt()
-                .user(prompt)
-                .call()
-                .content();
-
-        String result = response == null ? "" : response.trim().toLowerCase();
-
-        if ("unsafe".equals(result)) {
-            log.warn("Output rejected by guardrail.");
-            return GuardrailResult.outputRejected();
-        }
-
-        if ("safe".equals(result)) {
-            return GuardrailResult.success();
-        }
-
-        return GuardrailResult.invalidResponse();
-    }
 }

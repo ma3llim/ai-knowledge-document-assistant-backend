@@ -104,18 +104,6 @@ public class ChatService {
                 .prompt(prompt)
                 .stream()
                 .content()
-                .buffer(10)
-                .map(chunks -> String.join("", chunks))
-                .flatMap(chunk -> {
-                    GuardrailResult result = chatGuardrailService.validateOutput(chunk);
-
-                    if (!result.allowed()) {
-                        log.warn("Output rejected by guardrail.");
-                        return Flux.just(result.message());
-                    }
-
-                    return Flux.just(chunk);
-                })
                 .doOnNext(chunk -> log.info("LLM stream chunk received: {}", chunk))
                 .doOnError(exception -> log.error("LLM streaming failed", exception));
     }
