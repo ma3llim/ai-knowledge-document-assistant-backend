@@ -7,7 +7,7 @@
 
 plugins {
     id 'application'
-    id 'org.springframework.boot' version '3.5.4'
+    id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -16,7 +16,7 @@ repositories {
 }
 
 ext {
-    set('springAiVersion', "1.1.8")
+    set('springAiVersion', "2.0.1")
 }
 
 dependencyManagement {
@@ -41,7 +41,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     // Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
+//    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
     // Postgresql
     runtimeOnly 'org.postgresql:postgresql'
     // OAuth
@@ -52,9 +53,13 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     // AWS SDK
-    implementation 'software.amazon.awssdk:aws-sdk-java:2.54.13'
-    implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.4.0")
-    implementation "io.awspring.cloud:spring-cloud-aws-starter-sqs"
+    implementation 'software.amazon.awssdk:s3:2.34.5'
+    implementation 'software.amazon.awssdk:sqs:2.34.5'
+
+    // Spring Cloud AWS
+    implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.1.1')
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
     // Spring AI
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     // Spring AI PDF Reader
