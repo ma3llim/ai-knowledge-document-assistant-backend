@@ -4,7 +4,8 @@ public enum ChatWebSocketEventType {
     START,
     CONTENT,
     GUARDRAIL,
-    CITATIONS,
+    CANCEL,
+    DISCONNECT,
     COMPLETE,
     ERROR
 }

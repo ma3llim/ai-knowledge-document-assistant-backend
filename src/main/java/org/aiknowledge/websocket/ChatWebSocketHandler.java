@@ -9,6 +9,7 @@ import org.aiknowledge.service.ChatService;
 import org.aiknowledge.websocket.dto.ChatWebSocketError;
 import org.aiknowledge.websocket.dto.ChatWebSocketEvent;
 import org.aiknowledge.websocket.dto.ChatWebSocketRequest;
+import org.aiknowledge.websocket.dto.PreparedChat;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -29,6 +30,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         try {
             ChatWebSocketRequest request = objectMapper.readValue(message.getPayload(), ChatWebSocketRequest.class);
 
+            if (request.type() == ChatWebSocketEventType.CANCEL) {
+                cancelCurrentStream(session);
+                return;
+            }
+
+            if (request.type() == ChatWebSocketEventType.DISCONNECT) {
+                disconnect(session);
+                return;
+            }
+
             if (request.userId() == null) {
                 sendError(session, "UNAUTHORIZED", "WebSocket authentication required.");
                 return;
@@ -41,6 +52,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                     .userQuery(request.userQuery())
                     .build();
 
+            PreparedChat preparedChat = chatService.prepareChat(chatQuestionRequest);
+
+            if (preparedChat.guardrailMessage() != null) {
+                sendError(session, "GUARDRAIL_REJECTED", preparedChat.guardrailMessage());
+                return;
+            }
+
+            sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, preparedChat.conversationId()));
 
             Disposable subscription = chatService.processQuestion(chatQuestionRequest)
                     .doOnSubscribe(
@@ -62,6 +81,31 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             log.error("Failed to process WebSocket message. sessionId={}", session.getId(), exception);
 
             sendError(session, "INVALID_REQUEST", "Invalid WebSocket request.");
+        }
+    }
+
+    private void cancelCurrentStream(WebSocketSession session) {
+        Disposable subscription = (Disposable) session.getAttributes().remove("streamSubscription");
+
+        if (subscription != null && !subscription.isDisposed()) {
+            log.info("Cancelling active chat stream. sessionId={}", session.getId());
+            subscription.dispose();
+        }
+    }
+
+    private void disconnect(WebSocketSession session) {
+        log.info("Client requested WebSocket disconnect. sessionId={}", session.getId());
+
+        cancelCurrentStream(session);
+
+        sessionManager.remove(session);
+
+        try {
+            if (session.isOpen()) {
+                session.close(CloseStatus.NORMAL);
+            }
+        } catch (Exception exception) {
+            log.error("Failed to close WebSocket session. sessionId={}", session.getId(), exception);
         }
     }
 
@@ -116,11 +160,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void sendError(WebSocketSession session, String code, String message) {
-        sendEvent(session,
-                new ChatWebSocketEvent(
-                        ChatWebSocketEventType.ERROR,
-                        new ChatWebSocketError(code, message)
-                )
-        );
+        sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.ERROR, new ChatWebSocketError(code, message)));
     }
 }

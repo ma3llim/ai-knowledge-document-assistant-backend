@@ -51,7 +51,7 @@ public class ChatService {
         });
     }
 
-    private PreparedChat prepareChat(ChatQuestionRequest questionRequest) {
+    public PreparedChat prepareChat(ChatQuestionRequest questionRequest) {
         User user = userRepository.findById(questionRequest.userId()).orElseThrow(() -> {
             log.warn("Authenticated user could not be resolved");
             return new ResourceNotFoundException("Authenticated user not found");
