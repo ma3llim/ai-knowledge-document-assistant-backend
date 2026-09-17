@@ -42,6 +42,7 @@ public class ChatService {
     public Flux<String> processQuestion(ChatQuestionRequest questionRequest) {
         return Flux.defer(() -> {
             PreparedChat preparedChat = prepareChat(questionRequest);
+
             if (preparedChat.guardrailMessage() != null) {
                 return Flux.just(preparedChat.guardrailMessage());
             }
@@ -104,7 +105,9 @@ public class ChatService {
                 .prompt(prompt)
                 .stream()
                 .content()
+                .filter(chunk -> !chunk.isEmpty())
                 .doOnNext(chunk -> log.info("LLM stream chunk received: {}", chunk))
+                .doOnComplete(() -> log.info("LLM stream completed"))
                 .doOnError(exception -> log.error("LLM streaming failed", exception));
     }
 

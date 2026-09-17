@@ -16,8 +16,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import reactor.core.Disposable;
 
-import java.util.stream.Collectors;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -48,17 +46,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                     .doOnSubscribe(
                             subscription1 -> sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, null)))
                     .doOnNext(chunk -> sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.CONTENT, chunk)))
-                    .collect(Collectors.joining())
-                    .subscribe(
-                            finalAnswer -> {
-                                log.info("LLM stream completed. answerLength={}", finalAnswer.length());
+                    .doOnComplete(() -> {
+                        log.info("LLM stream completed");
+                        sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.COMPLETE, null));
+                    })
+                    .doOnError(exception -> {
+                        log.error("LLM streaming failed", exception);
 
-                            },
-                            error -> {
-                                log.error("WebSocket chat processing failed. sessionId={}", session.getId(), error);
-                                sendError(session, "INTERNAL_ERROR", "Unable to process the request.");
-                            }
-                    );
+                        sendError(session, "INTERNAL_ERROR", "Unable to process the request.");
+                    })
+                    .subscribe();
 
             session.getAttributes().put("streamSubscription", subscription);
         } catch (Exception exception) {

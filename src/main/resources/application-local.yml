@@ -113,7 +113,7 @@ app:
     chat:
       cloudflare:
         api-key: ${CLOUDFLARE_API_KEY}
-        base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai
+        base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
         model: "@cf/meta/llama-3.1-8b-instruct-fast"
         temperature: 0.2
         max-tokens: 5000
@@ -121,7 +121,7 @@ app:
     guardrail:
       cloudflare:
         api-key: ${CLOUDFLARE_API_KEY}
-        base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai
+        base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
         model: "@cf/meta/llama-guard-3-8b"
         max-tokens: 100
 
