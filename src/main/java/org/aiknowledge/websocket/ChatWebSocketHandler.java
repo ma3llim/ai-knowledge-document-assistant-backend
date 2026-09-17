@@ -29,6 +29,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ChatService chatService;
     private final ChatResponseValidator chatResponseValidator;
     private final ConversationService conversationService;
+    private static final String STREAM_SUBSCRIPTION = "streamSubscription";
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
@@ -68,7 +69,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
             StringBuilder answerBuffer = new StringBuilder();
 
-            Disposable subscription = chatService.processQuestion(chatQuestionRequest)
+            Disposable subscription = chatService.generateStream(preparedChat.prompt())
                     .doOnSubscribe(subscription1 ->
                             sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, startData)))
                     .doOnNext(chunk -> {
@@ -96,9 +97,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                         log.error("LLM streaming failed", exception);
                         sendError(session, "INTERNAL_ERROR", "Unable to process the request.");
                     })
+                    .doFinally(signalType -> session.getAttributes().remove(STREAM_SUBSCRIPTION))
                     .subscribe();
 
-            session.getAttributes().put("streamSubscription", subscription);
         } catch (Exception exception) {
             log.error("Failed to process WebSocket message. sessionId={}", session.getId(), exception);
 
@@ -107,7 +108,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void cancelCurrentStream(WebSocketSession session) {
-        Disposable subscription = (Disposable) session.getAttributes().remove("streamSubscription");
+        Disposable subscription = (Disposable) session.getAttributes().remove(STREAM_SUBSCRIPTION);
 
         if (subscription != null && !subscription.isDisposed()) {
             log.info("Cancelling active chat stream. sessionId={}", session.getId());
@@ -140,7 +141,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        Disposable subscription = (Disposable) session.getAttributes().remove("streamSubscription");
+        Disposable subscription = (Disposable) session.getAttributes().remove(STREAM_SUBSCRIPTION);
 
         if (subscription != null) {
             subscription.dispose();
@@ -155,7 +156,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("WebSocket transport error. sessionId={}", session.getId(), exception);
 
-        Disposable subscription = (Disposable) session.getAttributes().remove("streamSubscription");
+        Disposable subscription = (Disposable) session.getAttributes().remove(STREAM_SUBSCRIPTION);
 
         if (subscription != null) {
             subscription.dispose();
