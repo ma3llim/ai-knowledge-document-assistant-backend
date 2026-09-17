@@ -1,4 +1,4 @@
-package org.aiknowledge.service.chat;
+package org.aiknowledge.integration.prompts;
 
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;

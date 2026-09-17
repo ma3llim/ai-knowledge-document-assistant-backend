@@ -1,11 +1,11 @@
-package org.aiknowledge.service.chat;
+package org.aiknowledge.integration.prompts;
 
 import org.springframework.ai.chat.prompt.PromptTemplate;
 
 import java.util.Map;
 
-public final class ChatPrompt {
-    private ChatPrompt() {
+public final class ChatGuardrailPrompt {
+    private ChatGuardrailPrompt() {
     }
 
     public static final PromptTemplate CHAT_GUARDRAIL_SYSTEM_PROMPT =

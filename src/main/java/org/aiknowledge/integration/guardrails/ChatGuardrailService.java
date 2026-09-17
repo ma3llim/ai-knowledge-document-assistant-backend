@@ -1,7 +1,8 @@
-package org.aiknowledge.service.chat;
+package org.aiknowledge.integration.guardrails;
 
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.GuardrailResult;
+import org.aiknowledge.integration.prompts.ChatGuardrailPrompt;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +18,7 @@ public class ChatGuardrailService {
     }
 
     public GuardrailResult validateInput(String userQuery) {
-        String prompt = ChatPrompt.build(userQuery);
+        String prompt = ChatGuardrailPrompt.build(userQuery);
 
         String response = guardrailChatModel
                 .prompt()
