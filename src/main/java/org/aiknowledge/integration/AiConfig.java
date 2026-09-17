@@ -16,7 +16,7 @@ import org.springframework.web.client.RestClient;
 public class AiConfig {
     private final AppProperties properties;
 
-    @Bean
+    @Bean("chatModel")
     public OpenAiChatModel chatModel() {
         AppProperties.Ai.Chat.Cloudflare cloudflare = properties.ai().chat().cloudflare();
 
@@ -29,6 +29,27 @@ public class AiConfig {
                 .model(cloudflare.model())
                 .temperature(cloudflare.temperature())
                 .maxTokens(cloudflare.maxTokens())
+                .build();
+
+        return OpenAiChatModel.builder()
+                .openAiApi(openAiApi)
+                .defaultOptions(options)
+                .build();
+    }
+
+    @Bean("guardrailChatModel")
+    public OpenAiChatModel guardrailChatModel() {
+        AppProperties.Ai.Guardrail.Cloudflare guardrail = properties.ai().guardrail().cloudflare();
+
+        OpenAiApi openAiApi = OpenAiApi.builder()
+                .apiKey(guardrail.apiKey())
+                .baseUrl(guardrail.baseUrl())
+                .build();
+
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(guardrail.model())
+                .temperature(0.0)
+                .maxTokens(guardrail.maxTokens())
                 .build();
 
         return OpenAiChatModel.builder()

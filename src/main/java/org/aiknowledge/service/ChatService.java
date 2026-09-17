@@ -2,6 +2,7 @@ package org.aiknowledge.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.dto.GuardrailResult;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.entity.User;
@@ -39,9 +40,14 @@ public class ChatService {
     private final ChatGuardrailService chatGuardrailService;
 
     public Flux<String> processQuestion(ChatQuestionRequest questionRequest) {
-        PreparedChat preparedChat = prepareChat(questionRequest);
+        return Flux.defer(() -> {
+            PreparedChat preparedChat = prepareChat(questionRequest);
+            if (preparedChat.guardrailMessage() != null) {
+                return Flux.just(preparedChat.guardrailMessage());
+            }
 
-        return generateStream(preparedChat.prompt());
+            return generateStream(preparedChat.prompt());
+        });
     }
 
     private PreparedChat prepareChat(ChatQuestionRequest questionRequest) {
@@ -57,7 +63,13 @@ public class ChatService {
 
         String userQuery = normalizeQuery(questionRequest.userQuery());
 
-        chatGuardrailService.validateInput(userQuery);
+        GuardrailResult guardrailResult = chatGuardrailService.validateInput(userQuery);
+
+        if (!guardrailResult.allowed()) {
+            log.warn("Input rejected by guardrail.");
+            return new PreparedChat(null, null, false, null, List.of(),
+                    guardrailResult.message());
+        }
 
         ConversationResult conversationResult = conversationService.getOrCreateConversation(user.getId(),
                 questionRequest.documentId(), questionRequest.conversationId());
@@ -84,7 +96,7 @@ public class ChatService {
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);
 
         return new PreparedChat(conversationResult.conversationId(), conversationResult.title(),
-                conversationResult.newlyCreated(), prompt, rerankedDocuments);
+                conversationResult.newlyCreated(), prompt, rerankedDocuments, null);
     }
 
     public Flux<String> generateStream(Prompt prompt) {
@@ -92,7 +104,19 @@ public class ChatService {
                 .prompt(prompt)
                 .stream()
                 .content()
-                .doOnNext(chunk -> log.debug("LLM stream chunk received: {}", chunk))
+                .buffer(10)
+                .map(chunks -> String.join("", chunks))
+                .flatMap(chunk -> {
+                    GuardrailResult result = chatGuardrailService.validateOutput(chunk);
+
+                    if (!result.allowed()) {
+                        log.warn("Output rejected by guardrail.");
+                        return Flux.just(result.message());
+                    }
+
+                    return Flux.just(chunk);
+                })
+                .doOnNext(chunk -> log.info("LLM stream chunk received: {}", chunk))
                 .doOnError(exception -> log.error("LLM streaming failed", exception));
     }
 

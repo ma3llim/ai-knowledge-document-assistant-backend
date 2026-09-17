@@ -27,7 +27,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ChatService chatService;
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
             ChatWebSocketRequest request = objectMapper.readValue(message.getPayload(), ChatWebSocketRequest.class);
 
@@ -43,15 +43,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                     .userQuery(request.userQuery())
                     .build();
 
-            sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, null));
 
             Disposable subscription = chatService.processQuestion(chatQuestionRequest)
+                    .doOnSubscribe(
+                            subscription1 -> sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, null)))
                     .doOnNext(chunk -> sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.CONTENT, chunk)))
                     .collect(Collectors.joining())
                     .subscribe(
                             finalAnswer -> {
-                                log.debug("LLM stream completed. answerLength={}", finalAnswer.length());
-                                
+                                log.info("LLM stream completed. answerLength={}", finalAnswer.length());
+
                             },
                             error -> {
                                 log.error("WebSocket chat processing failed. sessionId={}", session.getId(), error);
@@ -68,14 +69,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         sessionManager.register(session);
         log.info("WebSocket connection established. sessionId={}, userId={}", session.getId(),
                 sessionManager.getUserId(session));
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Disposable subscription = (Disposable) session.getAttributes().remove("streamSubscription");
 
         if (subscription != null) {
@@ -88,7 +89,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("WebSocket transport error. sessionId={}", session.getId(), exception);
 
         Disposable subscription = (Disposable) session.getAttributes().remove("streamSubscription");

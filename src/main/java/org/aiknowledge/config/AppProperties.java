@@ -59,7 +59,8 @@ public record AppProperties(
             Embedding embedding,
             Rag rag,
             Chat chat,
-            Reranking reranking
+            Reranking reranking,
+            Guardrail guardrail
     ) {
 
         public record Processing(
@@ -85,7 +86,8 @@ public record AppProperties(
                 int minChunkLengthToEmbed,
                 int maxChunkSize,
                 Retrieval retrieval,
-                Context context
+                Context context,
+                Guardrail guardrail
         ) {
             public record Retrieval(
                     double similarityThreshold,
@@ -123,6 +125,17 @@ public record AppProperties(
                     String baseUrl,
                     String model
             ) {
+            }
+        }
+
+        public record Guardrail(
+                Cloudflare cloudflare
+        ) {
+            public record Cloudflare(
+                    String apiKey,
+                    String baseUrl,
+                    String model,
+                    int maxTokens) {
             }
         }
     }

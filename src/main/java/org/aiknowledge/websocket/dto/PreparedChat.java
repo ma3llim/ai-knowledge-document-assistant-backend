@@ -11,6 +11,7 @@ public record PreparedChat(
         String conversationTitle,
         boolean newlyCreated,
         Prompt prompt,
-        List<Document> rerankedDocuments
+        List<Document> rerankedDocuments,
+        String guardrailMessage
 ) {
 }
