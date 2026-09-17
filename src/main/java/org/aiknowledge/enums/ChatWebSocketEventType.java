@@ -4,7 +4,6 @@ public enum ChatWebSocketEventType {
     START,
     CONTENT,
     GUARDRAIL,
-    SOURCES,
     CITATIONS,
     COMPLETE,
     ERROR

@@ -1,6 +1,6 @@
-package org.aiknowledge.integration.rag.prompts;
+package org.aiknowledge.integration.prompts;
 
-public class DefaultPrompt {
+public class RagDefaultPrompt {
     public static final String DEFAULT_SYSTEM_PROMPT = """
             You are an AI Knowledge Assistant.
             
