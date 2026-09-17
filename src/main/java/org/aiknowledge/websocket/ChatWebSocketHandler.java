@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
+import org.aiknowledge.dto.response.ChatStartData;
 import org.aiknowledge.enums.ChatWebSocketEventType;
 import org.aiknowledge.service.ChatService;
+import org.aiknowledge.service.chat.ConversationService;
+import org.aiknowledge.validation.ChatResponseValidator;
 import org.aiknowledge.websocket.dto.ChatWebSocketError;
 import org.aiknowledge.websocket.dto.ChatWebSocketEvent;
 import org.aiknowledge.websocket.dto.ChatWebSocketRequest;
@@ -24,6 +27,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final WebSocketSessionManager sessionManager;
     private final ObjectMapper objectMapper;
     private final ChatService chatService;
+    private final ChatResponseValidator chatResponseValidator;
+    private final ConversationService conversationService;
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
@@ -59,19 +64,36 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
 
-            sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, preparedChat.conversationId()));
+            ChatStartData startData = objectMapper.convertValue(preparedChat, ChatStartData.class);
+
+            StringBuilder answerBuffer = new StringBuilder();
 
             Disposable subscription = chatService.processQuestion(chatQuestionRequest)
-                    .doOnSubscribe(
-                            subscription1 -> sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, null)))
-                    .doOnNext(chunk -> sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.CONTENT, chunk)))
+                    .doOnSubscribe(subscription1 ->
+                            sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, startData)))
+                    .doOnNext(chunk -> {
+                                if (!chunk.isEmpty()) {
+                                    answerBuffer.append(chunk);
+
+                                    sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.CONTENT, chunk));
+                                }
+                            }
+                    )
                     .doOnComplete(() -> {
-                        log.info("LLM stream completed");
-                        sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.COMPLETE, null));
+                        String finalAnswer = answerBuffer.toString();
+
+                        try {
+                            String validateFinalAnswer = chatResponseValidator.validate(finalAnswer);
+
+                            conversationService.saveAssistantMessage(preparedChat.conversationId(), validateFinalAnswer);
+
+                            sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.COMPLETE, null));
+                        } catch (Exception exception) {
+                            log.error("Failed to finalize chat response", exception);
+                        }
                     })
                     .doOnError(exception -> {
                         log.error("LLM streaming failed", exception);
-
                         sendError(session, "INTERNAL_ERROR", "Unable to process the request.");
                     })
                     .subscribe();
