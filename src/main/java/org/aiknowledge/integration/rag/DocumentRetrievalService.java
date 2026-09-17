@@ -45,7 +45,6 @@ public class DocumentRetrievalService {
                 ).build();
         try {
             List<Document> documents = vectorStore.similaritySearch(searchRequest);
-            log.info("Retrieved {} documents. userId={}, documentId={}", documents.size(), userId, documentId);
             return documents;
         } catch (Exception exception) {
             log.error("Document retrieval failed. userId={}, documentId={}", userId, documentId, exception);

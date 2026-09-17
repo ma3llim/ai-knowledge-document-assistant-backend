@@ -1,4 +1,4 @@
-package org.aiknowledge.config;
+package org.aiknowledge.config.websocker;
 
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.websocket.ChatWebSocketHandler;

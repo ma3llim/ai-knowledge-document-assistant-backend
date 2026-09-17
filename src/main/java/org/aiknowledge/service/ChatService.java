@@ -105,10 +105,7 @@ public class ChatService {
                 .prompt(prompt)
                 .stream()
                 .content()
-                .filter(chunk -> !chunk.isEmpty())
-                .doOnNext(chunk -> log.info("LLM stream chunk received: {}", chunk))
-                .doOnComplete(() -> log.info("LLM stream completed"))
-                .doOnError(exception -> log.error("LLM streaming failed", exception));
+                .filter(chunk -> !chunk.isEmpty());
     }
 
     private String normalizeQuery(String query) {
