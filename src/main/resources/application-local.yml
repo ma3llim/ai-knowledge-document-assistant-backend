@@ -12,6 +12,10 @@ spring:
     username: ${PG_USER}
     password: ${PG_PASSWORD}
 
+  data:
+    redis:
+      url: ${UPSTASH_REDIS_URL}
+
   security:
     oauth2:
       client:
@@ -52,6 +56,28 @@ spring:
         secret-key: ${AWS_SECRET_ACCESS_KEY}
 
 app:
+  rate-limit:
+    api:
+      enabled: true
+      requests-per-window: 100
+      window-seconds: 60
+
+    websocket:
+      enabled: true
+
+      connections:
+        requests-per-window: 5
+        window-seconds: 60
+
+      messages:
+        requests-per-window: 30
+        window-seconds: 60
+
+    llm:
+      enabled: true
+      requests-per-window: 20
+      window-seconds: 60
+
   cors:
     allowed-origins:
       - http://localhost:5173
