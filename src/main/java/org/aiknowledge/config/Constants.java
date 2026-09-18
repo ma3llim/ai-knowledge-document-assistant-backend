@@ -24,10 +24,5 @@ public final class Constants {
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/actuator",
-            "/actuator/health",
-            "/actuator/info",
-            "/actuator/metrics/**",
-            "/actuator/prometheus"
     };
 }
