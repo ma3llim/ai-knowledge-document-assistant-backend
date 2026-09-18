@@ -27,10 +27,6 @@ dependencyManagement {
 dependencies {
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    // actuator & prometheus
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'io.micrometer:micrometer-registry-prometheus'
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     // spring security

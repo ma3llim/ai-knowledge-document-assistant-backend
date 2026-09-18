@@ -4,8 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.dto.ApiSuccessResponse;
 import org.aiknowledge.dto.PageResponse;
-import org.aiknowledge.dto.response.documents.DocumentResponse;
-import org.aiknowledge.dto.response.documents.DocumentSummaryResponse;
+import org.aiknowledge.dto.response.DocumentResponse;
 import org.aiknowledge.security.SecurityUserService;
 import org.aiknowledge.service.DocumentService;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +34,7 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<DocumentSummaryResponse>> getDocuments(
+    public ResponseEntity<PageResponse<DocumentResponse>> getDocuments(
             @PageableDefault(size = 20) Pageable pageable) {
         UUID userId = securityUserService.getCurrentUserId();
         return ResponseEntity.ok(documentService.getDocuments(userId, pageable));
@@ -64,12 +63,4 @@ public class DocumentController {
 
         return ResponseEntity.noContent().build();
     }
-
-//    @PostMapping("/{documentId}/retry")
-//    public ResponseEntity<Void> retryProcessing(@PathVariable UUID documentId) {
-//        UUID userId = securityUserService.getCurrentUserId();
-//        documentService.retryProcessing(userId, documentId);
-//
-//        return ResponseEntity.noContent().build();
-//    }
 }

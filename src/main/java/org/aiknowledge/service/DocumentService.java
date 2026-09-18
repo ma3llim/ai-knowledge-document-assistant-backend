@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.PageResponse;
-import org.aiknowledge.dto.response.documents.DocumentResponse;
-import org.aiknowledge.dto.response.documents.DocumentSummaryResponse;
+import org.aiknowledge.dto.response.DocumentResponse;
 import org.aiknowledge.entity.Document;
 import org.aiknowledge.entity.DocumentProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
@@ -19,6 +18,8 @@ import org.aiknowledge.integration.storage.ObjectStorageService;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +41,7 @@ public class DocumentService {
     private final DocumentProcessingJobRepository documentProcessingJobRepository;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final VectorStore vectorStore;
 
     @Transactional
     public DocumentResponse upload(UUID userId, MultipartFile file) {
@@ -108,14 +110,14 @@ public class DocumentService {
         }
     }
 
-    public PageResponse<DocumentSummaryResponse> getDocuments(UUID userId, Pageable pageable) {
+    public PageResponse<DocumentResponse> getDocuments(UUID userId, Pageable pageable) {
         Page<Document> documents = documentRepository.findAllByUserId(userId, pageable);
 
-        List<DocumentSummaryResponse> content = documents.getContent().stream()
-                .map(document -> objectMapper.convertValue(document, DocumentSummaryResponse.class))
+        List<DocumentResponse> content = documents.getContent().stream()
+                .map(document -> objectMapper.convertValue(document, DocumentResponse.class))
                 .toList();
 
-        return PageResponse.<DocumentSummaryResponse>builder()
+        return PageResponse.<DocumentResponse>builder()
                 .content(content)
                 .page(documents.getNumber())
                 .size(documents.getSize())
@@ -145,6 +147,18 @@ public class DocumentService {
 
         try {
             objectStorageService.delete(document.getR2ObjectKey());
+
+            Filter.Expression filter = new Filter.Expression(
+                    Filter.ExpressionType.EQ,
+                    new Filter.Key("document_id"),
+                    new Filter.Value(documentId.toString())
+            );
+
+            vectorStore.delete(filter);
+
+            documentRepository.delete(document);
+
+            log.info("Document deleted successfully. documentId={}, userId={}", documentId, userId);
         } catch (RuntimeException exception) {
             document.setStatus(DocumentStatus.FAILED);
             document.setFailureReason("Failed to delete document from storage");

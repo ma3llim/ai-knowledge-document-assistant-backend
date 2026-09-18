@@ -114,7 +114,6 @@ public class DocumentIngestionService {
 
             log.info("Document processing completed. jobId={}, documentId={}, chunks={}, durationMs={}",
                     jobId, document.getId(), enrichedChunks.size(), durationMs);
-
         } catch (Exception exception) {
             long durationMs = (System.nanoTime() - startTime) / 1_000_000;
 

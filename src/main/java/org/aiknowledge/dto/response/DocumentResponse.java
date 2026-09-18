@@ -1,4 +1,4 @@
-package org.aiknowledge.dto.response.documents;
+package org.aiknowledge.dto.response;
 
 import lombok.Builder;
 import org.aiknowledge.enums.DocumentStatus;
