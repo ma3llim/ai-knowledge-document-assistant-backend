@@ -16,6 +16,7 @@ public final class Constants {
     public static final String LAST_PONG = "lastPong";
     public static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(30);
     public static final Duration PONG_TIMEOUT = Duration.ofSeconds(75);
+    public static final int MESSAGE_PAGE_SIZE = 20;
     public static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/oauth2/**",

@@ -2,10 +2,14 @@ package org.aiknowledge.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.config.Constants;
+import org.aiknowledge.dto.MessageCursor;
 import org.aiknowledge.dto.PageResponse;
 import org.aiknowledge.dto.response.ConversationResponse;
+import org.aiknowledge.dto.response.MessageHistoryResponse;
+import org.aiknowledge.dto.response.MessageResponse;
 import org.aiknowledge.entity.Conversation;
 import org.aiknowledge.entity.Message;
 import org.aiknowledge.enums.MessageRole;
@@ -16,8 +20,10 @@ import org.aiknowledge.websocket.dto.ConversationResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +31,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ConversationService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
@@ -90,8 +97,73 @@ public class ConversationService {
                 .build();
     }
 
-    public List<Message> getMessages(UUID conversationId) {
-        return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+    public MessageHistoryResponse getMessages(UUID userId, UUID conversationId, Instant beforeCreatedAt, UUID beforeMessageId) {
+        validateConversationAccess(userId, conversationId);
+
+        PageRequest pageable = PageRequest.of(0, Constants.MESSAGE_PAGE_SIZE);
+        Slice<Message> messages;
+
+        if (beforeCreatedAt == null || beforeMessageId == null) {
+            messages = messageRepository.findByConversationIdOrderByCreatedAtDescIdDesc(conversationId, pageable);
+        } else {
+            messages = messageRepository.findMessagesBefore(conversationId, beforeCreatedAt, beforeMessageId, pageable);
+        }
+
+        List<MessageResponse> content = messages.getContent().stream()
+                .map(message -> objectMapper.convertValue(message, MessageResponse.class))
+                .toList();
+
+        MessageCursor nextCursor = null;
+        if (!content.isEmpty() && messages.hasNext()) {
+            Message lastMessage = messages.getContent().get(messages.getContent().size() - 1);
+
+            nextCursor = MessageCursor.builder()
+                    .beforeCreatedAt(lastMessage.getCreatedAt())
+                    .beforeMessageId(lastMessage.getId())
+                    .build();
+        }
+
+        return MessageHistoryResponse.builder()
+                .content(content)
+                .nextCursor(nextCursor)
+                .hasMore(messages.hasNext())
+                .build();
+    }
+
+    private void validateConversationAccess(UUID userId, UUID conversationId) {
+        boolean exists = conversationRepository.existsByIdAndUserId(conversationId, userId);
+
+        if (!exists) {
+            log.warn("Conversation access denied or conversation not found. conversationId={}, userId={}",
+                    conversationId, userId);
+            throw new ResourceNotFoundException("Conversation not found");
+        }
+    }
+
+    public ConversationResponse updateTitle(UUID userId, UUID conversationId, String title) {
+        Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId).orElseThrow(() -> {
+            log.warn("Update conversation title failed: conversation not found. conversationId={}, userId={}",
+                    conversationId, userId);
+            return new ResourceNotFoundException("Conversation not found");
+        });
+
+        conversation.setTitle(title.trim());
+
+        Conversation savedConversation = conversationRepository.save(conversation);
+
+        return objectMapper.convertValue(savedConversation, ConversationResponse.class);
+    }
+
+    public void deleteConversation(UUID userId, UUID conversationId) {
+        boolean exists = conversationRepository.existsByIdAndUserId(conversationId, userId);
+
+        if (!exists) {
+            log.warn("Delete conversation failed: conversation not found. conversationId={}, userId={}",
+                    conversationId, userId);
+            throw new ResourceNotFoundException("Conversation not found");
+        }
+
+        conversationRepository.deleteById(conversationId);
     }
 
     public List<Message> getRecentHistory(UUID conversationId) {

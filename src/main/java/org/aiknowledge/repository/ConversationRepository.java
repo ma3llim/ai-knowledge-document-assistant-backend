@@ -14,4 +14,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
     Optional<Conversation> findByIdAndUserIdAndDocumentId(UUID conversationId, UUID userId, UUID documentId);
 
     Page<Conversation> findByUserIdOrderByUpdatedAtDesc(UUID userId, Pageable pageable);
+
+    boolean existsByIdAndUserId(UUID conversationId, UUID userId);
+
+    Optional<Conversation> findByIdAndUserId(UUID conversationId, UUID userId);
+
+    void deleteByIdAndUserId(UUID conversationId, UUID userId);
 }
