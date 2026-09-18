@@ -1,7 +1,6 @@
-package org.aiknowledge.integration;
+package org.aiknowledge.config;
 
 import lombok.RequiredArgsConstructor;
-import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.integration.embedding.JinaEmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;

@@ -3,7 +3,10 @@ package org.aiknowledge.websocket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.config.Constants;
+import org.aiknowledge.config.ratelimit.RateLimitKeyResolver;
+import org.aiknowledge.config.ratelimit.RedisRateLimitService;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
 import org.aiknowledge.dto.response.ChatStartData;
 import org.aiknowledge.enums.ChatWebSocketEventType;
@@ -33,9 +36,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ChatResponseValidator chatResponseValidator;
     private final ConversationService conversationService;
     private final ThreadPoolTaskScheduler heartbeatScheduler;
+    private final AppProperties properties;
+    private final RedisRateLimitService rateLimitService;
+    private final RateLimitKeyResolver keyResolver;
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        AppProperties.RateLimit rateLimit = properties.rateLimit();
+
         try {
             ChatWebSocketRequest request = objectMapper.readValue(message.getPayload(), ChatWebSocketRequest.class);
 
@@ -52,6 +60,21 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             if (request.userId() == null) {
                 sendError(session, "UNAUTHORIZED", "WebSocket authentication required.");
                 return;
+            }
+
+            if (rateLimit.websocket().enabled()) {
+                String rateLimitKey = keyResolver.resolveWebSocketMessageKey(request.userId().toString());
+
+                var result = rateLimitService.check(rateLimitKey, rateLimit.llm().requestsPerWindow(),
+                        rateLimit.llm().windowSeconds());
+
+                if (!result.allowed()) {
+                    log.warn("WebSocket message rate limit exceeded. userId={}, sessionId={}, retryAfterSeconds={}",
+                            request.userId(), session.getId(), result.retryAfterSeconds());
+
+                    sendRateLimitError(session, result.retryAfterSeconds());
+                    return;
+                }
             }
 
             ChatQuestionRequest chatQuestionRequest = ChatQuestionRequest.builder()
@@ -255,5 +278,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
 
         session.getAttributes().remove(Constants.LAST_PONG);
+    }
+
+    private void sendRateLimitError(WebSocketSession session, long retryAfterSeconds) {
+        try {
+            ChatWebSocketError error = new ChatWebSocketError("RATE_LIMIT_EXCEEDED",
+                    "Too many messages. Please try again later.");
+
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(error)));
+        } catch (Exception exception) {
+            log.error("Failed to send WebSocket rate-limit error. sessionId={}", session.getId(), exception);
+        }
     }
 }

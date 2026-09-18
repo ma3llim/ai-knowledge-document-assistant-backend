@@ -11,7 +11,8 @@ public record AppProperties(
         Cookie cookie,
         Storage storage,
         Messaging messaging,
-        Ai ai
+        Ai ai,
+        RateLimit rateLimit
 ) {
 
     public record Cors(List<String> allowedOrigins) {
@@ -137,6 +138,20 @@ public record AppProperties(
                     String model,
                     int maxTokens) {
             }
+        }
+    }
+
+    public record RateLimit(Api api, Websocket websocket, Llm llm) {
+        public record Api(boolean enabled, int requestsPerWindow, int windowSeconds) {
+        }
+
+        public record Websocket(boolean enabled, Limit connections, Limit messages) {
+        }
+
+        public record Llm(boolean enabled, int requestsPerWindow, int windowSeconds) {
+        }
+
+        public record Limit(int requestsPerWindow, int windowSeconds) {
         }
     }
 }

@@ -3,6 +3,9 @@ package org.aiknowledge.websocket;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aiknowledge.config.AppProperties;
+import org.aiknowledge.config.ratelimit.RateLimitKeyResolver;
+import org.aiknowledge.config.ratelimit.RedisRateLimitService;
 import org.aiknowledge.entity.User;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.security.JwtService;
@@ -22,9 +25,13 @@ import java.util.UUID;
 public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final RedisRateLimitService rateLimitService;
+    private final RateLimitKeyResolver keyResolver;
+    private final AppProperties properties;
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
+        AppProperties.RateLimit.Websocket websocket = properties.rateLimit().websocket();
         String query = request.getURI().getQuery();
 
         if (query == null || query.isBlank()) {
@@ -58,6 +65,25 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
                 log.warn("WebSocket connection rejected: user not found. userId={}", userId);
                 response.setStatusCode(HttpStatus.UNAUTHORIZED);
                 return false;
+            }
+
+            if (websocket.enabled()) {
+                AppProperties.RateLimit.Limit connectionLimit = websocket.connections();
+
+                String rateLimitKey = keyResolver.resolveWebSocketConnectionKey(userId.toString());
+
+                var result = rateLimitService.check(rateLimitKey, connectionLimit.requestsPerWindow(),
+                        connectionLimit.windowSeconds());
+
+                if (!result.allowed()) {
+                    log.warn("WebSocket connection rate limit exceeded. userId={}, retryAfterSeconds={}",
+                            userId, result.retryAfterSeconds());
+
+                    response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+
+                    response.getHeaders().add("Retry-After", String.valueOf(result.retryAfterSeconds()));
+                    return false;
+                }
             }
 
             attributes.put("user", user);

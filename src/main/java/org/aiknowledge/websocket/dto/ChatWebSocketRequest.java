@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public record ChatWebSocketRequest(
         ChatWebSocketEventType type,
-        
+
         @NotNull(message = "Document ID is required")
         UUID documentId,
 
