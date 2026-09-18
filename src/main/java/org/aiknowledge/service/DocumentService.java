@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.dto.PageResponse;
 import org.aiknowledge.dto.response.DocumentResponse;
+import org.aiknowledge.entity.Conversation;
 import org.aiknowledge.entity.Document;
 import org.aiknowledge.entity.DocumentProcessingJob;
 import org.aiknowledge.enums.DocumentStatus;
@@ -15,6 +16,7 @@ import org.aiknowledge.exception.FileStorageException;
 import org.aiknowledge.exception.ResourceNotFoundException;
 import org.aiknowledge.integration.sqs.event.DocumentProcessingEvent;
 import org.aiknowledge.integration.storage.ObjectStorageService;
+import org.aiknowledge.repository.ConversationRepository;
 import org.aiknowledge.repository.DocumentProcessingJobRepository;
 import org.aiknowledge.repository.DocumentRepository;
 import org.aiknowledge.validation.DocumentFileValidator;
@@ -42,6 +44,7 @@ public class DocumentService {
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final VectorStore vectorStore;
+    private final ConversationRepository conversationRepository;
 
     @Transactional
     public DocumentResponse upload(UUID userId, MultipartFile file) {
@@ -156,6 +159,14 @@ public class DocumentService {
 
             vectorStore.delete(filter);
 
+            List<Conversation> conversations = conversationRepository.findAllByDocumentIdAndUserId(documentId, userId);
+
+            if (!conversations.isEmpty()) {
+                conversationRepository.deleteAll(conversations);
+
+                log.info("Deleted conversations associated with document. documentId={}, userId={}, count={}",
+                        documentId, userId, conversations.size());
+            }
             documentRepository.delete(document);
 
             log.info("Document deleted successfully. documentId={}, userId={}", documentId, userId);
