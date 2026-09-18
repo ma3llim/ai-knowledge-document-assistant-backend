@@ -17,11 +17,17 @@ public final class Constants {
     public static final String IDLE_TIMEOUT_TASK = "idleTimeoutTask";
     public static final Duration WEBSOCKET_IDLE_TIMEOUT = Duration.ofMinutes(2);
     public static final Duration WEBSOCKET_IDLE_CHECK_INTERVAL = Duration.ofSeconds(30);
+    public static final String WEBSOCKET_CONNECTED_AT = "websocketConnectedAt";
     public static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/oauth2/**",
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**",
+            "/actuator",
+            "/actuator/health",
+            "/actuator/info",
+            "/actuator/metrics/**",
+            "/actuator/prometheus"
     };
 }

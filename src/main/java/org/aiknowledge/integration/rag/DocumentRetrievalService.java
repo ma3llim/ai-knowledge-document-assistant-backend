@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aiknowledge.config.AppProperties;
 import org.aiknowledge.dto.request.ChatQuestionRequest;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -21,7 +20,6 @@ import java.util.UUID;
 public class DocumentRetrievalService {
     private final VectorStore vectorStore;
     private final AppProperties appProperties;
-    private final ChatClient chatClient;
 
     public List<Document> retrieve(ChatQuestionRequest request) {
         return retrieveRelevantDocuments(
@@ -43,11 +41,26 @@ public class DocumentRetrievalService {
                         new FilterExpressionBuilder().eq("user_id", userId.toString()),
                         new FilterExpressionBuilder().eq("document_id", documentId.toString())).build()
                 ).build();
+
+        long startTime = System.nanoTime();
+
         try {
+            log.info("Document retrieval started. userId={}, documentId={}, topK={}, similarityThreshold={}",
+                    userId, documentId, topK, similarityThreshold);
+
             List<Document> documents = vectorStore.similaritySearch(searchRequest);
+
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+
+            log.info("Document retrieval completed. userId={}, documentId={}, resultCount={}, durationMs={}",
+                    userId, documentId, documents.size(), durationMs);
+
             return documents;
+
         } catch (Exception exception) {
-            log.error("Document retrieval failed. userId={}, documentId={}", userId, documentId, exception);
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+            log.error("Document retrieval failed. userId={}, documentId={}, durationMs={}, errorType={}",
+                    userId, documentId, durationMs, exception.getClass().getSimpleName(), exception);
             return Collections.emptyList();
         }
     }

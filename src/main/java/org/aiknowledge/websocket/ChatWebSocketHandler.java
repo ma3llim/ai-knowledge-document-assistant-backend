@@ -24,6 +24,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import reactor.core.Disposable;
+import reactor.core.publisher.SignalType;
 
 import java.util.concurrent.ScheduledFuture;
 
@@ -68,8 +69,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             if (rateLimit.websocket().enabled()) {
                 String rateLimitKey = keyResolver.resolveWebSocketMessageKey(request.userId().toString());
 
-                var result = rateLimitService.check(rateLimitKey, rateLimit.llm().requestsPerWindow(),
-                        rateLimit.llm().windowSeconds());
+                var result = rateLimitService.check(rateLimitKey, rateLimit.websocket().messages().requestsPerWindow(),
+                        rateLimit.websocket().messages().windowSeconds());
 
                 if (!result.allowed()) {
                     log.warn("WebSocket message rate limit exceeded. userId={}, sessionId={}, retryAfterSeconds={}",
@@ -97,21 +98,26 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             ChatStartData startData = objectMapper.convertValue(preparedChat, ChatStartData.class);
 
             StringBuilder answerBuffer = new StringBuilder();
+            long streamStartTime = System.nanoTime();
 
             Disposable subscription = chatService.generateStream(preparedChat.prompt())
                     .doOnSubscribe(subscription1 -> {
                         session.getAttributes().put(Constants.STREAM_SUBSCRIPTION, subscription1);
+
+                        log.info("WebSocket chat stream started. sessionId={}, conversationId={}",
+                                session.getId(), preparedChat.conversationId());
+
                         sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.START, startData));
                     })
                     .doOnNext(chunk -> {
-                                if (!chunk.isEmpty()) {
-                                    answerBuffer.append(chunk);
+                        if (!chunk.isEmpty()) {
+                            answerBuffer.append(chunk);
 
-                                    sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.CONTENT, chunk));
-                                }
-                            }
-                    )
+                            sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.CONTENT, chunk));
+                        }
+                    })
                     .doOnComplete(() -> {
+                        long durationMs = (System.nanoTime() - streamStartTime) / 1_000_000;
                         String finalAnswer = answerBuffer.toString();
 
                         try {
@@ -119,16 +125,33 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
                             conversationService.saveAssistantMessage(preparedChat.conversationId(), validateFinalAnswer);
 
+                            log.info("WebSocket chat stream completed. sessionId={}, conversationId={}, durationMs={}",
+                                    session.getId(), preparedChat.conversationId(), durationMs);
+
                             sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.COMPLETE, null));
                         } catch (Exception exception) {
-                            log.error("Failed to finalize chat response", exception);
+                            log.error("Failed to finalize chat response. sessionId={}, conversationId={}, durationMs={}",
+                                    session.getId(), preparedChat.conversationId(), durationMs, exception);
                         }
                     })
                     .doOnError(exception -> {
-                        log.error("LLM streaming failed", exception);
+                        long durationMs = (System.nanoTime() - streamStartTime) / 1_000_000;
+                        log.error("LLM streaming failed. sessionId={}, conversationId={}, durationMs={}, errorType={}",
+                                session.getId(), preparedChat.conversationId(), durationMs, exception.getClass().getSimpleName(),
+                                exception);
+
                         sendError(session, "INTERNAL_ERROR", "Unable to process the request.");
                     })
-                    .doFinally(signalType -> session.getAttributes().remove(Constants.STREAM_SUBSCRIPTION))
+                    .doFinally(signalType -> {
+                        if (signalType == SignalType.CANCEL) {
+                            long durationMs = (System.nanoTime() - streamStartTime) / 1_000_000;
+
+                            log.info("WebSocket chat stream cancelled. sessionId={}, conversationId={}, durationMs={}",
+                                    session.getId(), preparedChat.conversationId(), durationMs);
+                        }
+
+                        session.getAttributes().remove(Constants.STREAM_SUBSCRIPTION);
+                    })
                     .subscribe();
         } catch (Exception exception) {
             log.error("Failed to process WebSocket message. sessionId={}", session.getId(), exception);
@@ -170,6 +193,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         long now = System.nanoTime();
 
         session.getAttributes().put(Constants.LAST_ACTIVITY, now);
+        session.getAttributes().put(Constants.WEBSOCKET_CONNECTED_AT, now);
 
         ScheduledFuture<?> idleTimeoutTask = idleTimeoutScheduler
                 .scheduleAtFixedRate(() -> checkIdleTimeout(session), Constants.WEBSOCKET_IDLE_CHECK_INTERVAL);
@@ -182,6 +206,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        Long connectedAt = (Long) session.getAttributes().get(Constants.WEBSOCKET_CONNECTED_AT);
+
+        long durationMs = connectedAt != null ? (System.nanoTime() - connectedAt) / 1_000_000 : 0;
+
         cleanupIdleTimeout(session);
 
         Disposable subscription = (Disposable) session.getAttributes().remove(Constants.STREAM_SUBSCRIPTION);
@@ -192,7 +220,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         sessionManager.remove(session);
 
-        log.info("WebSocket connection closed. sessionId={}, status={}", session.getId(), status);
+        log.info("WebSocket connection closed. sessionId={}, status={}, durationMs={}", session.getId(),
+                status, durationMs);
     }
 
     @Override
@@ -267,6 +296,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
 
         session.getAttributes().remove(Constants.LAST_ACTIVITY);
+        session.getAttributes().remove(Constants.WEBSOCKET_CONNECTED_AT);
     }
 
     private void sendRateLimitError(WebSocketSession session, long retryAfterSeconds) {

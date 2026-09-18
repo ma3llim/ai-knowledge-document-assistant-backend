@@ -38,9 +38,12 @@ public class DocumentIngestionService {
         DocumentProcessingJob job = documentProcessingJobRepository.findById(jobId).orElseThrow(() ->
                 new ResourceNotFoundException("Processing job not found: " + jobId));
 
-
         Document document = documentRepository.findById(job.getDocumentId()).orElseThrow(() ->
                 new ResourceNotFoundException("Document not found: " + job.getDocumentId()));
+
+        long startTime = System.nanoTime();
+
+        log.info("Document processing started. jobId={}, documentId={}", jobId, document.getId());
 
         try {
             job.setStatus(ProcessingStatus.PROCESSING);
@@ -78,6 +81,7 @@ public class DocumentIngestionService {
                 org.springframework.ai.document.Document chunk = chunks.get(chunkIndex);
 
                 Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+
                 metadata.put("user_id", document.getUserId().toString());
                 metadata.put("document_id", document.getId().toString());
                 metadata.put("file_name", document.getOriginalFilename());
@@ -87,6 +91,7 @@ public class DocumentIngestionService {
                 addSourceMetadata(metadata, chunk);
 
                 String text = chunk.getText();
+
                 if (text == null || text.isBlank()) {
                     log.debug("Skipping empty chunk. documentId={}, chunkIndex={}", document.getId(), chunkIndex);
                     continue;
@@ -104,10 +109,17 @@ public class DocumentIngestionService {
             job.setStatus(ProcessingStatus.COMPLETED);
             job.setCompletedAt(Instant.now());
             documentProcessingJobRepository.save(job);
-            log.info("Document chunks embedded and stored successfully. documentId={}, chunks={}",
-                    document.getId(), enrichedChunks.size());
+
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+
+            log.info("Document processing completed. jobId={}, documentId={}, chunks={}, durationMs={}",
+                    jobId, document.getId(), enrichedChunks.size(), durationMs);
+
         } catch (Exception exception) {
-            log.error("Document processing failed. documentId={}", job.getDocumentId(), exception);
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+
+            log.error("Document processing failed. jobId={}, documentId={}, durationMs={}, errorType={}",
+                    jobId, document.getId(), durationMs, exception.getClass().getSimpleName(), exception);
 
             job.setStatus(ProcessingStatus.FAILED);
             job.setCompletedAt(Instant.now());
