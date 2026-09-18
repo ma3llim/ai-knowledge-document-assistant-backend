@@ -9,22 +9,22 @@ public class RateLimitKeyResolver {
         Object userId = request.getAttribute("userId");
 
         if (userId != null) {
-            return "rate-limit:api:user:" + userId;
+            return "ai-assistant:api:user:" + userId;
         }
 
-        return "rate-limit:api:ip:" + resolveClientIp(request);
+        return "ai-assistant:api:ip-" + normalizeIp(resolveClientIp(request));
     }
 
     public String resolveWebSocketConnectionKey(String userId) {
-        return "rate-limit:ws:connection:user:" + userId;
+        return "ai-assistant:ws:connection:user:" + userId;
     }
 
     public String resolveWebSocketMessageKey(String userId) {
-        return "rate-limit:ws:message:user:" + userId;
+        return "ai-assistant:ws:message:user:" + userId;
     }
 
     public String resolveLlmKey(String userId) {
-        return "rate-limit:llm:user:" + userId;
+        return "ai-assistant:llm:user:" + userId;
     }
 
     private String resolveClientIp(HttpServletRequest request) {
@@ -35,5 +35,9 @@ public class RateLimitKeyResolver {
         }
 
         return request.getRemoteAddr();
+    }
+
+    private String normalizeIp(String ip) {
+        return ip.replace(":", "-");
     }
 }
