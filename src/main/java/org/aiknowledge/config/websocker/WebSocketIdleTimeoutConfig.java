@@ -5,12 +5,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
-public class WebSocketHeartbeatConfig {
+public class WebSocketIdleTimeoutConfig {
     @Bean
-    public ThreadPoolTaskScheduler webSocketHeartbeatScheduler() {
+    public ThreadPoolTaskScheduler webSocketIdleTimeoutScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+
         scheduler.setPoolSize(4);
-        scheduler.setThreadNamePrefix("ws-heartbeat");
+        scheduler.setThreadNamePrefix("ws-idle-timeout");
         scheduler.setRemoveOnCancelPolicy(true);
         scheduler.initialize();
 

@@ -19,11 +19,12 @@ import org.aiknowledge.websocket.dto.ChatWebSocketRequest;
 import org.aiknowledge.websocket.dto.PreparedChat;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.*;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import reactor.core.Disposable;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.ScheduledFuture;
 
 @Slf4j
@@ -35,10 +36,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ChatService chatService;
     private final ChatResponseValidator chatResponseValidator;
     private final ConversationService conversationService;
-    private final ThreadPoolTaskScheduler heartbeatScheduler;
     private final AppProperties properties;
     private final RedisRateLimitService rateLimitService;
     private final RateLimitKeyResolver keyResolver;
+    private final ThreadPoolTaskScheduler idleTimeoutScheduler;
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
@@ -56,6 +57,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 disconnect(session);
                 return;
             }
+
+            session.getAttributes().put(Constants.LAST_ACTIVITY, System.nanoTime());
 
             if (request.userId() == null) {
                 sendError(session, "UNAUTHORIZED", "WebSocket authentication required.");
@@ -147,7 +150,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         log.info("Client requested WebSocket disconnect. sessionId={}", session.getId());
 
         cancelCurrentStream(session);
-        cleanupHeartbeat(session);
+        cleanupIdleTimeout(session);
 
         sessionManager.remove(session);
 
@@ -164,12 +167,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) {
         sessionManager.register(session);
 
-        session.getAttributes().put(Constants.LAST_PONG, System.nanoTime());
+        long now = System.nanoTime();
 
-        ScheduledFuture<?> heartbeatTask = heartbeatScheduler.scheduleAtFixedRate(
-                () -> sendHeartbeat(session), Constants.HEARTBEAT_INTERVAL);
+        session.getAttributes().put(Constants.LAST_ACTIVITY, now);
 
-        session.getAttributes().put(Constants.HEARTBEAT_TASK, heartbeatTask);
+        ScheduledFuture<?> idleTimeoutTask = idleTimeoutScheduler
+                .scheduleAtFixedRate(() -> checkIdleTimeout(session), Constants.WEBSOCKET_IDLE_CHECK_INTERVAL);
+
+        session.getAttributes().put(Constants.IDLE_TIMEOUT_TASK, idleTimeoutTask);
 
         log.info("WebSocket connection established. sessionId={}, userId={}", session.getId(),
                 sessionManager.getUserId(session));
@@ -177,7 +182,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        cleanupHeartbeat(session);
+        cleanupIdleTimeout(session);
 
         Disposable subscription = (Disposable) session.getAttributes().remove(Constants.STREAM_SUBSCRIPTION);
 
@@ -194,7 +199,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("WebSocket transport error. sessionId={}", session.getId(), exception);
 
-        cleanupHeartbeat(session);
+        cleanupIdleTimeout(session);
 
         Disposable subscription = (Disposable) session.getAttributes().remove(Constants.STREAM_SUBSCRIPTION);
 
@@ -226,58 +231,42 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         sendEvent(session, new ChatWebSocketEvent(ChatWebSocketEventType.ERROR, new ChatWebSocketError(code, message)));
     }
 
-    @Override
-    protected void handlePongMessage(WebSocketSession session, PongMessage message) throws Exception {
-        session.getAttributes().put(Constants.LAST_PONG, System.nanoTime());
-        log.debug("WebSocket pong received. sessionId={}", session.getId());
-    }
-
-    private void sendHeartbeat(WebSocketSession session) {
+    private void checkIdleTimeout(WebSocketSession session) {
         if (!session.isOpen()) {
-            cleanupHeartbeat(session);
+            cleanupIdleTimeout(session);
             return;
         }
 
-        Long lastPong = (Long) session.getAttributes().get(Constants.LAST_PONG);
+        Long lastActivity = (Long) session.getAttributes().get(Constants.LAST_ACTIVITY);
 
-        if (lastPong != null) {
-            long elapsedNanos = System.nanoTime() - lastPong;
-            if (elapsedNanos > Constants.PONG_TIMEOUT.toNanos()) {
-                log.warn("WebSocket heartbeat timeout. Closing session. sessionId={}", session.getId());
-
-                try {
-                    session.close(CloseStatus.GOING_AWAY);
-                } catch (Exception exception) {
-                    log.error("Failed to close heartbeat-timeout session. sessionId={}", session.getId(), exception);
-                }
-
-                cleanupHeartbeat(session);
-                sessionManager.remove(session);
-                return;
-            }
+        if (lastActivity == null) {
+            return;
         }
-        try {
-            synchronized (session) {
-                session.sendMessage(new PingMessage(ByteBuffer.allocate(0)));
+
+        long elapsedNanos = System.nanoTime() - lastActivity;
+
+        if (elapsedNanos >= Constants.WEBSOCKET_IDLE_TIMEOUT.toNanos()) {
+            log.info("WebSocket idle timeout reached. Closing session. sessionId={}, userId={}", session.getId(),
+                    sessionManager.getUserId(session));
+
+            cancelCurrentStream(session);
+
+            try {
+                session.close(CloseStatus.NORMAL);
+            } catch (Exception exception) {
+                log.error("Failed to close idle WebSocket session. sessionId={}", session.getId(), exception);
             }
-
-            log.debug("WebSocket ping sent. sessionId={}", session.getId());
-        } catch (Exception exception) {
-            log.warn("Failed to send WebSocket ping. sessionId={}", session.getId(), exception);
-
-            cleanupHeartbeat(session);
-            sessionManager.remove(session);
         }
     }
 
-    private void cleanupHeartbeat(WebSocketSession session) {
-        ScheduledFuture<?> heartbeatTask = (ScheduledFuture<?>) session.getAttributes().remove(Constants.HEARTBEAT_TASK);
+    private void cleanupIdleTimeout(WebSocketSession session) {
+        ScheduledFuture<?> idleTimeoutTask = (ScheduledFuture<?>) session.getAttributes().remove(Constants.IDLE_TIMEOUT_TASK);
 
-        if (heartbeatTask != null) {
-            heartbeatTask.cancel(false);
+        if (idleTimeoutTask != null) {
+            idleTimeoutTask.cancel(false);
         }
 
-        session.getAttributes().remove(Constants.LAST_PONG);
+        session.getAttributes().remove(Constants.LAST_ACTIVITY);
     }
 
     private void sendRateLimitError(WebSocketSession session, long retryAfterSeconds) {

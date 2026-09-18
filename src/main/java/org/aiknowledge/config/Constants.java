@@ -12,11 +12,11 @@ public final class Constants {
     public static final int MAX_HISTORY_CHARACTERS = 4000;
     public static final String FRONTEND_OAUTH_CALLBACK_URL = "http://localhost:5173/oauth/callback";
     public static final String STREAM_SUBSCRIPTION = "streamSubscription";
-    public static final String HEARTBEAT_TASK = "heartbeatTask";
-    public static final String LAST_PONG = "lastPong";
-    public static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(30);
-    public static final Duration PONG_TIMEOUT = Duration.ofSeconds(75);
     public static final int MESSAGE_PAGE_SIZE = 20;
+    public static final String LAST_ACTIVITY = "lastActivity";
+    public static final String IDLE_TIMEOUT_TASK = "idleTimeoutTask";
+    public static final Duration WEBSOCKET_IDLE_TIMEOUT = Duration.ofMinutes(2);
+    public static final Duration WEBSOCKET_IDLE_CHECK_INTERVAL = Duration.ofSeconds(30);
     public static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/oauth2/**",
