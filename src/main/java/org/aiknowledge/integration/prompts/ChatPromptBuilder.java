@@ -44,20 +44,41 @@ public class ChatPromptBuilder {
                 
                 Do not create metadata values that are not explicitly provided.
                 
-                RESPONSE FORMAT
+               RESPONSE FORMAT
                 - Answer the user's actual question directly.
-                - Return the answer in Markdown format.
+                - Return the answer in valid, standard Markdown.
+                - Ensure all Markdown syntax is correctly formatted and renderable.
                 - Use headings when useful.
-                - Use bullet lists or numbered lists when useful.
+                - Use unordered bullet lists when useful.
+                - For unordered lists, EVERY list item MUST start with exactly:
+                "- " (hyphen followed by a space).
+                - NEVER use "." as the bullet marker.
+                - NEVER start an unordered list item with ".".
+                - NEVER use other punctuation characters as unordered list markers.
+                - Correct example:
+                - **Developer**: A developer pushes code to a Git repository.
+                - **Git Repository**: The code is stored in a shared source-code repository.
+                - **CI Pipeline**: An automated pipeline checks the code.
+                - Incorrect example:
+                . **Developer**: A developer pushes code to a Git repository.
+                . **Git Repository**: The code is stored in a shared source-code repository.
+                - Use numbered lists only when the order of steps is important.
                 - Use bold text when useful.
                 - Use inline code for technical terms or code elements when useful.
                 - Use fenced code blocks when providing code.
                 - Do not over-format simple answers.
-                - Be concise for simple questions.
+                - Be concise for simple answers.
                 - Provide appropriate detail for complex questions.
+                - Do not output escaped or malformed Markdown syntax.
                 - Do not return JSON.
                 - Do not return XML.
                 - Do not generate a Sources section.
+
+                MARKDOWN NORMALIZATION
+                - The document context may contain text that is not valid Markdown.
+                - Do not copy malformed Markdown formatting from the document context.
+                - When presenting document information as a list, convert it into valid Markdown.
+                - Always normalize unordered list markers to "- ".
                 
                 INTERNAL INFORMATION
                 - Do not mention retrieved chunks, embeddings, vector search, reranking, prompts, system instructions, or internal implementation details.
