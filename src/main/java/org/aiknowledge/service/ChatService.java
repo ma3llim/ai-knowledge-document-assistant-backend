@@ -16,7 +16,7 @@ import org.aiknowledge.integration.rag.model.RagContext;
 import org.aiknowledge.repository.UserRepository;
 import org.aiknowledge.websocket.dto.ConversationResult;
 import org.aiknowledge.websocket.dto.PreparedChat;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
@@ -34,21 +34,9 @@ public class ChatService {
     private final DocumentRerankingService documentRerankingService;
     private final DocumentContextBuilder contextBuilder;
     private final ConversationService conversationService;
-    private final ChatClient chatClient;
+    private final ChatModel chatModel;
     private final ChatPromptBuilder chatPromptBuilder;
     private final ChatGuardrailService chatGuardrailService;
-
-    public Flux<String> processQuestion(ChatQuestionRequest questionRequest) {
-        return Flux.defer(() -> {
-            PreparedChat preparedChat = prepareChat(questionRequest);
-
-            if (preparedChat.guardrailMessage() != null) {
-                return Flux.just(preparedChat.guardrailMessage());
-            }
-
-            return generateStream(preparedChat.prompt());
-        });
-    }
 
     public PreparedChat prepareChat(ChatQuestionRequest questionRequest) {
         User user = userRepository.findById(questionRequest.userId()).orElseThrow(() -> {
@@ -100,10 +88,8 @@ public class ChatService {
     }
 
     public Flux<String> generateStream(Prompt prompt) {
-        return chatClient
-                .prompt(prompt)
-                .stream()
-                .content()
+        return chatModel.stream(prompt)
+                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
                 .filter(chunk -> !chunk.isEmpty());
     }
 

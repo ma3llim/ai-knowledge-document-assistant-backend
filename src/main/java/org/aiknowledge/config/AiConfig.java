@@ -2,6 +2,7 @@ package org.aiknowledge.config;
 
 import lombok.RequiredArgsConstructor;
 import org.aiknowledge.integration.embedding.JinaEmbeddingModel;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -15,8 +16,9 @@ public class AiConfig {
     private final AppProperties properties;
 
     @Bean("chatModel")
-    public OpenAiChatModel chatModel() {
-        AppProperties.Ai.Chat.Cloudflare cloudflare = properties.ai().chat().cloudflare();
+    public ChatModel chatModel() {
+        AppProperties.Ai.Chat.Cloudflare cloudflare =
+                properties.ai().chat().cloudflare();
 
         OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .apiKey(cloudflare.apiKey())
