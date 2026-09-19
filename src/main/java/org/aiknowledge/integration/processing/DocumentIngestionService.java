@@ -80,12 +80,12 @@ public class DocumentIngestionService {
             for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
                 org.springframework.ai.document.Document chunk = chunks.get(chunkIndex);
 
-                Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+                Map<String, Object> metadata = new HashMap<>();
 
                 metadata.put("user_id", document.getUserId().toString());
                 metadata.put("document_id", document.getId().toString());
                 metadata.put("file_name", document.getOriginalFilename());
-                metadata.put("content_type", document.getFileType());
+                metadata.put("content_type", document.getFileType().name());
                 metadata.put("chunk_index", chunkIndex);
 
                 addSourceMetadata(metadata, chunk);
