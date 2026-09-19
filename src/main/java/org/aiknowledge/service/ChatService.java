@@ -78,7 +78,7 @@ public class ChatService {
         List<Message> conversationHistory = conversationService.getRecentHistory(conversationResult.conversationId());
 
         RagContext ragContext = new RagContext(userQuery, conversationHistory, rerankedDocuments);
-
+        
         String context = contextBuilder.build(ragContext);
 
         Prompt prompt = chatPromptBuilder.chatPrompt(context, userQuery);

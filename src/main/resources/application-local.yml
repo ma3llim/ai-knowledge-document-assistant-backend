@@ -152,7 +152,3 @@ app:
         base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
         model: "@cf/meta/llama-guard-3-8b"
         max-tokens: 100
-
-logging:
-  level:
-    org.springframework.ai.chat.client.advisor: DEBUG
