@@ -27,8 +27,6 @@ dependencyManagement {
 dependencies {
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    // AWS Lambda
-    implementation 'com.amazonaws.serverless:aws-serverless-java-container-springboot4:3.0.1'
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     // spring security
