@@ -62,36 +62,19 @@ jobs:
               run: docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
             - name: Deploy to EC2
-              shell: bash
               run: |
                   ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
                   IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${{ github.sha }}"
 
-                  COMMAND_ID=$(aws ssm send-command \
-                      --region "${AWS_REGION}" \
-                      --instance-ids "${EC2_INSTANCE_ID}" \
-                      --document-name "AWS-RunShellScript" \
-                      --parameters "commands=[
-                      \"set -e\",
-                      \"aws ecr get-login-password --region ${AWS_REGION} | sudo docker login --username AWS --password-stdin ${ECR_REGISTRY}\",
-                      \"sudo docker pull ${IMAGE_URI}\",
-                      \"sudo docker stop ai-knowledge-document-assistant || true\",
-                      \"sudo docker rm ai-knowledge-document-assistant || true\",
-                      \"sudo docker run -d --name ai-knowledge-document-assistant --env-file /opt/ai-knowledge/.env -p 8081:8080 ${IMAGE_URI}\",
-                      \"sudo docker image ls ${ECR_REGISTRY}/${ECR_REPOSITORY} --format '{{.ID}} {{.Tag}}' | awk '\$2 != \\\"${{ github.sha }}\\\" {print \$1}' | sort -u | xargs -r sudo docker rmi || true\",
-                      \"sudo docker ps --filter name=ai-knowledge-document-assistant\"
-                      ]" \
-                      --query "Command.CommandId" \
-                      --output text)
-
-                  echo "SSM Command ID: ${COMMAND_ID}"
-
-                  aws ssm wait command-executed \
-                      --region "${AWS_REGION}" \
-                      --command-id "${COMMAND_ID}" \
-                      --instance-id "${EC2_INSTANCE_ID}"
-
-                  aws ssm get-command-invocation \
-                      --region "${AWS_REGION}" \
-                      --command-id "${COMMAND_ID}" \
-                      --instance-id "${EC2_INSTANCE_ID}"
+                  aws ssm send-command \
+                  --region "${AWS_REGION}" \
+                  --instance-ids "${EC2_INSTANCE_ID}" \
+                  --document-name "AWS-RunShellScript" \
+                  --parameters "commands=[
+                  \"aws ecr get-login-password --region ${AWS_REGION} | sudo docker login --username AWS --password-stdin ${ECR_REGISTRY}\",
+                  \"sudo docker pull ${IMAGE_URI}\",
+                  \"sudo docker stop ai-knowledge-document-assistant || true\",
+                  \"sudo docker rm ai-knowledge-document-assistant || true\",
+                  \"sudo docker run -d --name ai-knowledge-document-assistant --env-file /opt/ai-knowledge/.env -p 8081:8080 ${IMAGE_URI}\",
+                  \"sudo docker image prune -f\"
+                  ]"
