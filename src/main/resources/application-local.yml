@@ -1,0 +1,154 @@
+spring:
+  jackson:
+    default-property-inclusion: non_null
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  datasource:
+    url: ${PG_URL}
+    username: ${PG_USER}
+    password: ${PG_PASSWORD}
+
+  data:
+    redis:
+      url: ${UPSTASH_REDIS_URL}
+      repositories:
+        enabled: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  ai:
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        dimensions: 1024
+
+    model:
+      embedding: none
+      image: none
+      chat: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
+
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:ap-south-2}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+
+app:
+  rate-limit:
+    api:
+      enabled: true
+      requests-per-window: 100
+      window-seconds: 60
+
+    websocket:
+      enabled: true
+
+      connections:
+        requests-per-window: 5
+        window-seconds: 60
+
+      messages:
+        requests-per-window: 30
+        window-seconds: 60
+
+    llm:
+      enabled: true
+      requests-per-window: 20
+      window-seconds: 60
+
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5500
+
+  jwt:
+    issuer: ${JWT_ISSUER}
+    secret: ${JWT_SECRET}
+    access-token-expiration: ${JWT_ACCESS_EXPIRATION}
+    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION}
+    oauth-login-code-expiration: ${JWT_OAUTH_LOGIN_CODE_EXPIRATION}
+
+  cookie:
+    access-token-name: access_token
+    refresh-token-name: refresh_token
+    secure: ${COOKIE_SECURE}
+    http-only: true
+    same-site: ${COOKIE_SAME_SITE}
+    path: /
+
+  storage:
+    endpoint: ${R2_ENDPOINT}
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    bucket: ${R2_BUCKET}
+
+  messaging:
+    sqs:
+      document-processing-queue: document-processing-queue
+
+  ai:
+    rag:
+      chunk-size: 700
+      min-chunk-characters: 100
+      min-chunk-length-to-embed: 50
+      max-chunk-size: 1000
+      retrieval:
+        similarity-threshold: 0.70
+        top-k: 5
+
+      context:
+        max-conversation-turns: 3
+        max-context-characters: 12000
+        max-chunk-characters: 4000
+
+    reranking:
+      top-k: 3
+      jina:
+        api-key: ${JINA_API_KEY}
+        base-url: https://api.jina.ai
+        model: jina-reranker-v3.5
+
+    embedding:
+      jina:
+        api-key: ${JINA_API_KEY}
+        base-url: https://api.jina.ai
+        model: jina-embeddings-v3
+
+    chat:
+      cloudflare:
+        api-key: ${CLOUDFLARE_API_KEY}
+        base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
+        model: "@cf/meta/llama-3.1-8b-instruct-fast"
+        temperature: 0.2
+        max-tokens: 5000
+
+    guardrail:
+      cloudflare:
+        api-key: ${CLOUDFLARE_API_KEY}
+        base-url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1
+        model: "@cf/meta/llama-guard-3-8b"
+        max-tokens: 100
