@@ -10,7 +10,7 @@ public final class Constants {
     public static final String INPUT_REJECTED = "Your request cannot be processed because it violates our safety guidelines.";
     public static final String INVALID_GUARDRAIL_RESPONSE = "I can't process this request right now.";
     public static final int MAX_HISTORY_CHARACTERS = 4000;
-    public static final String FRONTEND_OAUTH_CALLBACK_URL = "https://ai.api.mohdsameer.info/oauth/callback";
+    public static final String FRONTEND_OAUTH_CALLBACK_URL = "https://ai.mohdsameer.info/oauth/callback";
     public static final String STREAM_SUBSCRIPTION = "streamSubscription";
     public static final int MESSAGE_PAGE_SIZE = 20;
     public static final String LAST_ACTIVITY = "lastActivity";
